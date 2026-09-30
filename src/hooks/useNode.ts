@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import {
   ensureStarted,
+  getNodeGroupsSnapshot,
   getNodeSnapshot,
   getNodeTrafficTrendSnapshot,
+  getNodesOverviewSnapshot,
   getOfflineNodeIdsSnapshot,
   getStoreStatusSnapshot,
   getVisibleNodeIdsSnapshot,
   subscribe,
   subscribeToNode,
 } from "@/lib/nodes";
+import type { NodeGroup } from "@/utils/grouping";
+import type { NodesOverview } from "@/utils/overview";
 import type { NodeDisplay, TrafficTrendSample } from "@/types/monitor";
 
 const EMPTY_TRAFFIC_TREND_SNAPSHOT: { up: TrafficTrendSample[]; down: TrafficTrendSample[] } = {
@@ -62,6 +66,18 @@ export function useVisibleNodeIds(): string[] {
 export function useOfflineNodeIds(): string[] {
   useEnsured();
   return useSyncExternalStore(subscribe, getOfflineNodeIdsSnapshot, getOfflineNodeIdsSnapshot);
+}
+
+/** 首页的分组。身份只在分组结果真的变化时才换，可以放心订阅。 */
+export function useNodeGroups(): NodeGroup[] {
+  useEnsured();
+  return useSyncExternalStore(subscribe, getNodeGroupsSnapshot, getNodeGroupsSnapshot);
+}
+
+/** 首页总览的合计。身份只在算出来的数字真的变化时才换，可以放心订阅。 */
+export function useNodesOverview(): NodesOverview {
+  useEnsured();
+  return useSyncExternalStore(subscribe, getNodesOverviewSnapshot, getNodesOverviewSnapshot);
 }
 
 export function useNodeStoreStatus() {

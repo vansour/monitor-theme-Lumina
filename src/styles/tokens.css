@@ -48,11 +48,6 @@
   --status-online: #2f9e65;
   --status-offline: #dc2626;
 
-  --tag-red-bg: #fee2e2;
-  --tag-red-fg: #b91c1c;
-  --tag-gray-bg: #e5e5e5;
-  --tag-gray-fg: #3f3f46;
-
   --shadow-card:
     0 0 0 1px rgba(24, 24, 27, 0.03),
     0 1px 2px rgba(24, 24, 27, 0.04),
@@ -106,72 +101,10 @@
   --status-online: #61c08f;
   --status-offline: #d84e45;
 
-  --tag-red-bg: #9e3426;
-  --tag-red-fg: #ececee;
-  --tag-gray-bg: #26262a;
-  --tag-gray-fg: #dedee1;
-
   --shadow-card:
     0 0 0 1px rgba(255, 255, 255, 0.012),
     0 1px 2px rgba(0, 0, 0, 0.05),
     0 10px 20px -20px rgba(0, 0, 0, 0.35);
 
   --ring: rgba(93, 136, 255, 0.46);
-}
-
-/* Tag palette — DStatus-style pills colored by tag color name */
-[data-tag="ruby"],
-[data-tag="red"],
-[data-tag="tomato"],
-[data-tag="crimson"] {
-  --tag-bg: var(--tag-red-bg);
-  --tag-fg: var(--tag-red-fg);
-  --tag-border: transparent;
-}
-[data-tag="gold"],
-[data-tag="amber"],
-[data-tag="yellow"] {
-  --tag-bg: rgba(233, 162, 59, 0.16);
-  --tag-fg: #e9a23b;
-  --tag-border: transparent;
-}
-[data-tag="orange"],
-[data-tag="bronze"],
-[data-tag="brown"] {
-  --tag-bg: rgba(233, 123, 53, 0.16);
-  --tag-fg: #e97b35;
-  --tag-border: transparent;
-}
-[data-tag="green"],
-[data-tag="grass"],
-[data-tag="mint"],
-[data-tag="jade"],
-[data-tag="lime"] {
-  --tag-bg: rgba(84, 180, 132, 0.16);
-  --tag-fg: #54b484;
-  --tag-border: transparent;
-}
-[data-tag="blue"],
-[data-tag="sky"],
-[data-tag="cyan"],
-[data-tag="teal"] {
-  --tag-bg: rgba(78, 129, 238, 0.16);
-  --tag-fg: #4e81ee;
-  --tag-border: transparent;
-}
-[data-tag="violet"],
-[data-tag="purple"],
-[data-tag="plum"],
-[data-tag="iris"],
-[data-tag="indigo"],
-[data-tag="pink"] {
-  --tag-bg: rgba(157, 90, 239, 0.16);
-  --tag-fg: #9d5aef;
-  --tag-border: transparent;
-}
-[data-tag="gray"],
-[data-tag=""] {
-  --tag-bg: var(--tag-gray-bg);
-  --tag-fg: var(--tag-gray-fg);
-  --tag-border: transparent;
 }

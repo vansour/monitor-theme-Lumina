@@ -1,5 +1,9 @@
 import { getNodes } from "@/lib/api";
 import { safeNodes, toDisplay } from "@/utils/adapters";
+import { EMPTY_GROUPS, groupNodes, sameGroups } from "@/utils/grouping";
+import type { NodeGroup } from "@/utils/grouping";
+import { EMPTY_OVERVIEW, sameOverview, summarizeNodes } from "@/utils/overview";
+import type { NodesOverview } from "@/utils/overview";
 import type { Node, NodeDisplay, TrafficTrendSample } from "@/types/monitor";
 
 type Listener = () => void;
@@ -198,6 +202,10 @@ let visibleNodeIdsSnapshot: string[] = [];
 let visibleNodeIdsSource: State | null = null;
 let offlineIdsSnapshot: string[] = [];
 let offlineIdsSource: State | null = null;
+let groupsSnapshot: NodeGroup[] = EMPTY_GROUPS;
+let groupsSource: State | null = null;
+let overviewSnapshot: NodesOverview = EMPTY_OVERVIEW;
+let overviewSource: State | null = null;
 let storeStatusSnapshot: StoreStatus = { hasLoaded: false, failureStreak: 0 };
 
 function commit(next: State, touched: Iterable<string>) {
@@ -397,6 +405,47 @@ export function getOfflineNodeIdsSnapshot(): string[] {
     if (!same) offlineIdsSnapshot = next;
   }
   return offlineIdsSnapshot;
+}
+
+/**
+ * 首页分组。`groupNodes()` 算，这里只管缓存。
+ *
+ * 顺序只能从 `state.order` 取：`byId` 是普通对象、键是数字字符串，
+ * `Object.values()` 会按 id 升序还回来 —— 那是 hub 的 id 顺序，不是站长拖出来的顺序。
+ * 身份稳定那套理由与下面两个快照完全一样，比较用 `sameGroups`。
+ */
+export function getNodeGroupsSnapshot(): NodeGroup[] {
+  if (groupsSource !== state) {
+    groupsSource = state;
+    const nodes: NodeDisplay[] = [];
+    for (const id of state.order) {
+      const node = state.byId[id];
+      if (node) nodes.push(node);
+    }
+    const next = groupNodes(nodes);
+    if (!sameGroups(next, groupsSnapshot)) groupsSnapshot = next;
+  }
+  return groupsSnapshot;
+}
+
+/**
+ * 首页总览要的那些合计 `summarizeNodes()` 算，这里只管缓存。
+ *
+ * 与离线 id 快照同一套做法，理由也一样：状态每 2 秒换一次身份，而这里只在**算出来的
+ * 数字真的变了**的时候才换返回值的身份。少了这层缓存，`useSyncExternalStore` 每次
+ * 拿到的都是新对象，跟着空转重渲染，开发模式下 React 还会直接告警
+ * 「The result of getSnapshot should be cached」。
+ *
+ * 断线时 `markFailure` 每 5 秒也会提交一次（只动 failureStreak），那时数字没变，
+ * 身份就不该变 —— 这一点全靠 `sameOverview` 逐字段比较兜着。
+ */
+export function getNodesOverviewSnapshot(): NodesOverview {
+  if (overviewSource !== state) {
+    overviewSource = state;
+    const next = summarizeNodes(Object.values(state.byId));
+    if (!sameOverview(next, overviewSnapshot)) overviewSnapshot = next;
+  }
+  return overviewSnapshot;
 }
 
 export function getStoreStatusSnapshot(): StoreStatus {

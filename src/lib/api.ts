@@ -68,17 +68,20 @@ export function getMetrics(
   hours: number,
   points: number,
   series?: "metrics" | "ping",
+  signal?: AbortSignal,
 ): Promise<MetricsResponse> {
   const query = new URLSearchParams({ hours: String(hours), points: String(points) });
   if (series) query.set("series", series);
-  return api<MetricsResponse>(`/nodes/${id}/metrics?${query}`);
+  return api<MetricsResponse>(`/nodes/${id}/metrics?${query}`, signal ? { signal } : undefined);
 }
 
 /**
  * 首页卡片用的：一个节点最近一小时的探测记录。
  *
  * 60 个点就是一个小时在该栅格下的全部桶（探测记录每分钟落一次），要多也没有。
+ * `signal` 由调用方给：轮询要能在一个请求挂住时把它掐掉，而不是让那张卡片一直
+ * 占着在飞的名额。
  */
-export function getNodePing(id: number, hours = 1) {
-  return getMetrics(id, hours, 60, "ping");
+export function getNodePing(id: number, hours = 1, signal?: AbortSignal) {
+  return getMetrics(id, hours, 60, "ping", signal);
 }

@@ -16,6 +16,8 @@ type ConfigField = {
 export type Config = {
   default_appearance: "system" | "light" | "dark";
   enable_admin_button: boolean;
+  show_overview: boolean;
+  group_nodes: boolean;
   offline_nodes_behind: boolean;
   show_ping_mini: boolean;
   show_ping_chart: boolean;

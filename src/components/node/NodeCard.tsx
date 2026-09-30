@@ -107,8 +107,6 @@ export const NodeCard = memo(function NodeCard({
     );
   }
 
-  // monitor 的节点模型没有标签，所以这一行只可能显示分组。
-  const footerTags = node.group ? [{ label: node.group, color: "gray" }] : [];
   const expire = formatExpireDays(node.expiresIn);
   const uptime = formatUptimeDays(node.uptime);
   const subtitle = buildSubtitle([node.os, node.arch, node.virtualization]);
@@ -376,27 +374,6 @@ export const NodeCard = memo(function NodeCard({
               color="var(--progress-cpu)"
             />
           </div>
-          {footerTags.length > 0 && (
-            <div className="dstatus-tags-row">
-              {footerTags.slice(0, 6).map((tag, i) => (
-                <span
-                  key={`${tag.label}-${i}`}
-                  data-tag={tag.color}
-                  className="dstatus-tag-chip"
-                  style={{
-                    background: "var(--tag-bg)",
-                    color: "var(--tag-fg)",
-                  }}
-                  title={tag.label}
-                >
-                  {tag.label}
-                </span>
-              ))}
-              {footerTags.length > 6 && (
-                <span className="dstatus-tag-more">+{footerTags.length - 6}</span>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </article>

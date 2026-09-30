@@ -17,12 +17,13 @@
   border: 1px solid var(--hairline);
 }
 
+/* 与卡片同一套材质：实心、细边、卡片阴影 —— 浮在内容上也不发虚。 */
 .control-button {
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--text-secondary);
-  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-card);
   transition:
     background 160ms ease,
     color 160ms ease,
@@ -30,7 +31,7 @@
     border-color 160ms ease;
 }
 .control-button:hover {
-  background: color-mix(in srgb, var(--hover-bg) 72%, var(--surface));
+  background: var(--hover-bg);
   color: var(--text-primary);
   border-color: var(--border-strong);
 }
@@ -57,39 +58,9 @@
   pointer-events: auto;
 }
 
-.floating-controls-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.floating-controls-actions {
-  display: inline-flex;
-  max-width: 340px;
-  align-items: center;
-  gap: 8px;
-  overflow: hidden;
-  opacity: 1;
-  transform: translateX(0) scale(1);
-  transform-origin: right center;
-  transition:
-    max-width 220ms cubic-bezier(0.32, 0.72, 0, 1),
-    opacity 160ms ease,
-    transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.floating-controls.is-collapsed .floating-controls-actions {
-  max-width: 0;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(18px) scale(0.96);
-}
-
 .floating-controls-trigger {
   position: relative;
   flex: 0 0 auto;
-  box-shadow: 0 10px 28px -22px rgba(0, 0, 0, 0.38);
 }
 
 .floating-controls.has-warning .floating-controls-trigger {
@@ -105,6 +76,105 @@
   border: 1px solid var(--surface);
   border-radius: 999px;
   background: var(--status-offline);
+}
+
+/* 同步异常的提示条：与菜单一样常显在按钮下方。 */
+.floating-controls-warning {
+  display: flex;
+  max-width: 262px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--status-offline) 32%, transparent);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--status-offline);
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: var(--shadow-card);
+}
+
+/* ---- 右上角菜单的二级面板 ----
+   一个常驻按钮 + 点开才出现的面板；外观与后台入口都在面板里。
+   材质与卡片一致：实心、细边、卡片阴影，不做模糊与半透明。 */
+
+.floating-panel {
+  width: 204px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  animation: floating-panel-in 140ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes floating-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.floating-panel-title {
+  margin: 2px 8px 8px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.floating-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.floating-panel-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.floating-panel-option:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.floating-panel-option[data-active="true"] {
+  background: var(--fill-tertiary);
+  color: var(--text-primary);
+}
+
+.floating-panel-check {
+  margin-left: auto;
+  color: var(--text-primary);
+}
+
+.floating-panel-divider {
+  height: 1px;
+  margin: 8px 6px;
+  background: var(--hairline);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-panel {
+    animation: none;
+  }
 }
 
 @media (min-width: 640px) {
@@ -255,18 +325,6 @@
   font-size: 13px;
 }
 
-.control-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px;
-  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 84%, transparent);
-  box-shadow: 0 8px 24px -22px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(14px);
-}
-
 .site-footer {
   padding: 0 12px 20px;
 }
@@ -282,18 +340,6 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   text-align: center;
-}
-
-.control-toggle {
-  border-color: transparent;
-  background: transparent;
-}
-
-.control-toggle.is-active {
-  background: color-mix(in srgb, var(--surface-elev) 92%, var(--hover-bg));
-  border-color: color-mix(in srgb, var(--border-strong) 78%, transparent);
-  color: var(--text-primary);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-strong) 48%, transparent);
 }
 
 .instance-page-back {
@@ -1596,58 +1642,6 @@
   gap: 18px;
 }
 
-/* Tags row — no top border; pills sit flush after footer meta row */
-.dstatus-tags-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  min-width: 0;
-  gap: 0.375rem;
-  padding-top: 0.125rem;
-}
-
-.dstatus-tag-chip {
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 10rem;
-  border-radius: 8px;
-  padding: 0.38rem 0.62rem;
-  font-size: 11px;
-  line-height: 1.15;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: 0.01em;
-}
-
-.dstatus-tag-more {
-  flex: 0 0 auto;
-  background: var(--tag-gray-bg);
-  color: var(--tag-gray-fg);
-  border-radius: 8px;
-  padding: 0.38rem 0.62rem;
-  font-size: 11px;
-  line-height: 1.15;
-}
-
-.dstatus-tag-add {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: var(--text-tertiary);
-  padding: 0.3rem 0.5rem 0.3rem 0.375rem;
-  font-size: 11px;
-  line-height: 1.15;
-  border-radius: 6px;
-  transition: color 160ms ease, background 160ms ease;
-}
-.dstatus-tag-add:hover {
-  color: var(--text-primary);
-  background: var(--fill-tertiary);
-}
-
 /* Offline mask */
 .offline-mask {
   position: absolute;
@@ -1693,6 +1687,199 @@
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.01em;
+}
+
+/* ---- 首页总览 ----
+   卡片列表上方的一行小格子：节点状态、实时带宽、资源占用、本月流量。
+   数据全来自已有的那一帧节点快照，这一块本身不发请求。
+   列数按 2 / 3 / 6 三档走，六个格子在任何宽度下都排满，不留落单的一格。 */
+
+.home-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .home-overview {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .home-overview {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.home-overview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 11px 13px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-elev) 92%, transparent);
+}
+
+.home-overview-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.home-overview-value {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 640;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.home-overview-direction {
+  flex: 0 0 auto;
+}
+
+.home-overview-value .home-overview-direction {
+  margin-right: 4px;
+}
+
+.home-overview-unit {
+  margin-left: 2px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.home-overview-note {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-overview-note[data-alert="true"] {
+  color: var(--status-offline);
+}
+
+.home-overview-empty {
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+/* ---- 首页分组 ----
+   卡片按 hub 里的分组分区，上面的标签栏可以只看某一组。
+   折叠与筛选都只给元素加 `hidden`：卡片留在 DOM 里，探测的 job、缓存与画布都不丢，
+   展开时不用重新拉数据，隐藏的那些也自然不再轮询。preflight 里那条
+   `[hidden]{display:none!important}` 压得住 `.node-card-grid` 的 `display:grid`。 */
+
+.node-card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+}
+
+@media (min-width: 1280px) {
+  .node-card-grid {
+    gap: 1.25rem;
+  }
+}
+
+.node-group-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* 分区之间一条细线；第一节上面是筛选条，不画。 */
+.node-group-section + .node-group-section {
+  border-top: 1px solid var(--hairline);
+  padding-top: 16px;
+}
+
+.home-group-heading {
+  margin: 0;
+}
+
+.home-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% + 16px);
+  margin: 0 -8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  text-align: left;
+  transition: background 160ms ease;
+}
+
+.home-group-header:hover {
+  background: var(--hover-bg);
+}
+
+/* 展开指着下面，收起指向右边 —— 与「点一下会发生什么」一致。 */
+.home-group-chevron {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+  transition: transform 160ms ease;
+}
+
+.home-group-header[aria-expanded="false"] .home-group-chevron {
+  transform: rotate(-90deg);
+}
+
+.home-group-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 640;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-group-counts {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding-left: 10px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.home-group-counts[data-alert="true"] {
+  color: var(--status-offline);
+}
+
+/* 顶部标签栏复用详情页那套分段控件，只是别被 flex 父级拉满宽。 */
+.home-group-filter {
+  align-self: flex-start;
+}
+
+.home-group-filter-count {
+  margin-left: 6px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 @media (max-width: 720px) {

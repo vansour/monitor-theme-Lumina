@@ -21,5 +21,12 @@
   },
   // 只覆盖测试，以及它直接依赖的那几个纯函数与类型 —— 应用代码归 tsconfig.app.json，
   // 那边的环境是浏览器。同一个文件被两个 project 各看一遍是允许的。
-  "include": ["src/**/*.test.ts", "src/utils/adapters.ts", "src/types/**/*.ts"]
+  "include": [
+    "src/**/*.test.ts",
+    "src/utils/adapters.ts",
+    "src/utils/grouping.ts",
+    "src/utils/pingSchedule.ts",
+    "src/utils/overview.ts",
+    "src/types/**/*.ts"
+  ]
 }
