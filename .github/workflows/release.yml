@@ -63,11 +63,11 @@ jobs:
             theme.tar.gz.sha256
           retention-days: 30
 
+      # 不写 --title：gh 默认拿 tag 名当标题，也就是「v0.0.1」，不再多一层主题名前缀。
       - if: startsWith(github.ref, 'refs/tags/')
         run: |
           gh release create "$GITHUB_REF_NAME" \
             theme.tar.gz theme.tar.gz.sha256 \
-            --title "Lumina $GITHUB_REF_NAME" \
             --notes-file release-notes.md \
             --repo "$GITHUB_REPOSITORY"
         env:
