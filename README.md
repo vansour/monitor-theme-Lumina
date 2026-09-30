@@ -1,6 +1,6 @@
 # monitor-theme-Lumina
 
-[monitor](https://github.com/monitor-probe/monitor) 的状态页主题，移植自 [stqfdyr/komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina)（Komari 主题，作者 shark & codex）。
+[monitor](https://github.com/monitor-probe/monitor) 的状态页主题，移植自 [stqfdyr/komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina) —— 面向 Komari 的同名主题。
 
 首页是卡片式的高密度节点列表，详情页整合了负载与延迟图表。React 19 + Vite + Tailwind 4 + uPlot。
 
@@ -94,6 +94,8 @@ npm run build && npm run package     # 产出 theme.tar.gz
 
 ## 许可
 
-上游 `komari-theme-Lumina` 仓库**没有 LICENSE 文件**，README 也没提许可，即默认保留所有权利。本仓库是在其明确授权之前做的移植，仅供自用；公开发布前请先确认上游授权。
+MIT，见 [LICENSE](./LICENSE)。
+
+本仓库是 [stqfdyr/komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina) 的移植（Komari → monitor），界面设计与绝大部分样式来自上游，数据层为适配 monitor 的公开接口重写。上游仓库没有 LICENSE 文件，README 也没提许可；如果要在本仓库的基础上再分发，建议一并确认上游的授权情况。
 
 `public/assets/flags/` 下的 258 个国旗图标看上去来自 [circle-flags](https://github.com/HatScripts/circle-flags)（MIT）。
