@@ -2,7 +2,7 @@
   "name": "Lumina",
   "short": "lumina",
   "description": "高信息密度的卡片式状态页：首页节点卡片、延迟与丢包条、详情页负载与延迟图表",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "vansour",
   "url": "https://github.com/vansour/monitor-theme-Lumina",
   "config": [

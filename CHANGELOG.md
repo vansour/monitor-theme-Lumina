@@ -13,6 +13,8 @@ tag 会被 release 工作流拦下来校验：必须等于 `theme.json` 的版�
 
 ## [未发布]
 
+## [0.0.2] - 2026-09-30
+
 ### 新增
 
 - 首页卡片列表上方新增一行总览小格子：节点状态、实时带宽合计、CPU / 内存 / 磁盘占用与本月流量。数据全部来自既有的实时推送，不额外请求 hub
@@ -69,5 +71,6 @@ tag 会被 release 工作流拦下来校验：必须等于 `theme.json` 的版�
 
 - React 19、Vite 8、TypeScript 7、Tailwind 4、uPlot 1.6、lucide-react 1.49
 
-[未发布]: https://github.com/vansour/monitor-theme-Lumina/compare/v0.0.1...HEAD
+[未发布]: https://github.com/vansour/monitor-theme-Lumina/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/vansour/monitor-theme-Lumina/releases/tag/v0.0.2
 [0.0.1]: https://github.com/vansour/monitor-theme-Lumina/releases/tag/v0.0.1
