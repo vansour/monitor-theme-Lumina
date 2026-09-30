@@ -96,6 +96,6 @@ npm run build && npm run package     # 产出 theme.tar.gz
 
 MIT，见 [LICENSE](./LICENSE)。
 
-本仓库是 [stqfdyr/komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina) 的移植（Komari → monitor），界面设计与绝大部分样式来自上游，数据层为适配 monitor 的公开接口重写。上游仓库没有 LICENSE 文件，README 也没提许可；如果要在本仓库的基础上再分发，建议一并确认上游的授权情况。
+本仓库是 [stqfdyr/komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina) 的移植（Komari → monitor），界面设计与绝大部分样式来自上游，数据层为适配 monitor 的公开接口重写。
 
 `public/assets/flags/` 下的 258 个国旗图标看上去来自 [circle-flags](https://github.com/HatScripts/circle-flags)（MIT）。
