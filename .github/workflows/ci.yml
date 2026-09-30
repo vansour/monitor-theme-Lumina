@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    # 散文改动没有编译器或 linter 能检查的东西。
+    paths-ignore: ["**.md", "LICENSE"]
+  pull_request:
+    paths-ignore: ["**.md", "LICENSE"]
+
+# 同一 ref 上新推的提交顶掉还在跑的。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      # hub 在 release tag 与 theme.json 的版本号不一致时，会一直把那个 release
+      # 当作「有新版本」推给站长。三个带版本号的文件必须一致，release.yml 再把
+      # tag 也卡到同一个值上。
+      - name: 三个文件的版本号必须一致
+        run: |
+          V=$(node -p 'require("./theme.json").version')
+          for f in package.json package-lock.json; do
+            [ "$(node -p "require('./$f').version")" = "$V" ] || {
+              echo "::error file=$f::$f 的版本号与 theme.json 的 $V 不一致"; exit 1; }
+          done
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

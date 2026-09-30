@@ -67,6 +67,23 @@ npm run build && npm run package     # 产出 theme.tar.gz
 
 包里是一个可直接安装的主题目录：`dist/` + `theme.json` + `preview.png`。这与 hub 从磁盘读主题时的布局一致，也与会发布到 release 的包完全一样。
 
+## 发版
+
+改动记在 [CHANGELOG.md](./CHANGELOG.md)。发布步骤：
+
+1. 把改动写进 `[未发布]` 一节
+2. 发布时新开 `## [x.y.z] - YYYY-MM-DD`，把 `[未发布]` 的内容挪进去
+3. `theme.json`、`package.json`、`package-lock.json` 三个版本号都改成 `x.y.z`
+4. 打 tag `vx.y.z` 推送
+
+推送 tag 会触发 `release.yml`：先卡 tag 与 `theme.json` 的版本号是否相等，再从 CHANGELOG 里取出这一版的一节当 release 说明（**取不到就直接失败**，不会发出一个没有说明的 release），然后构建、打包、校验包内容，最后附上 `theme.tar.gz` 与它的 sha256 发 release。
+
+手动触发同一个工作流只构建打包、留个 artifact 供下载，不发 release —— 用来在不打 tag 的情况下验证这条流水线。
+
+`npm run changelog -- <版本号>` 可以在本地把某一节的说明打出来看看。
+
+`ci.yml` 在推 main 和开 PR 时跑 lint / test / build，并检查三个文件的版本号是否一致。
+
 ## 用到的 hub 接口
 
 全部同源，全部只读：

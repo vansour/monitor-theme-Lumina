@@ -1,0 +1,48 @@
+# 更新日志
+
+格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
+
+## 怎么发版
+
+1. 在下面的 `## [未发布]` 里写清楚改了什么
+2. 准备发布时，新开一节 `## [x.y.z] - YYYY-MM-DD`，把 `[未发布]` 里的内容挪进去
+3. 把 `theme.json`、`package.json`、`package-lock.json` 的版本号都改成 `x.y.z`
+4. 打 tag `vx.y.z` 并推送
+
+tag 会被 release 工作流拦下来校验：必须等于 `theme.json` 的版本号，而且本文件里必须有对应的一节 —— 缺了就报错，发布不会在半截状态下发生。release 说明直接取那一节的内容。
+
+## [未发布]
+
+## [0.0.1] - 2026-09-30
+
+首个版本：把 [Komari](https://github.com/komari-monitor/komari) 的 [Lumina](https://github.com/stqfdyr/komari-theme-Lumina) 主题移植到 [monitor](https://github.com/monitor-probe/monitor)。
+
+### 新增
+
+- 首页节点卡片：CPU / 内存 / 磁盘 / 负载四条指标条、上下行网速与迷你趋势条、延迟与丢包条、到期与在线时长
+- 详情页：四张负载历史图（CPU / 内存 / 磁盘 / 网络）与一张多探测延迟图，支持框选缩放与断点连线
+- 负载图的「实时」档：从历史末段接上，之后跟着 WebSocket 每 2 秒推的帧追加新点
+- 主题设置：在 `theme.json` 里声明，站长在 hub 后台「主题」页调整
+- 六项设置：默认外观、后台入口、离线节点排最后、卡片显示延迟与丢包、显示延迟页签、默认时间范围
+
+### 说明
+
+- 详情页只画 CPU / 内存 / 磁盘 / 网络四张历史图：hub 的历史表只存这四样，Swap、负载均值、进程数、连接数都只有实时值
+- 首页延迟条用节点**自己**被分配到的探测，不需要把 Ping 任务绑定到卡片
+- 一个节点挂了多个探测时，卡片只画第一个（按后台里探测的排列顺序）
+- 设置改到 hub 后台，上游的站内设置面板（`?view=theme-manage`）没有移植
+- 节点模型没有标签，卡片底部只显示分组
+
+### 修复（相对上游）
+
+- 流量进度条改比**本计费周期**用量：hub 的 `traffic_limit` 是每周期上限，拿累计流量去除它，一台开了半年的机器会画成 1000%
+- 到期天数改用 hub 给的 `expires_in`：用浏览器时钟算，hub 跑 UTC、访客在 UTC+8 时会每个周期提前八小时显示「已过期」
+- 历史曲线「多大的洞算断档」改成按典型采样间距的倍数判断，不再随缩放级别变化
+- 首页延迟查询并发限制在 3 个、离线节点直接跳过、被 hub 挡回时保留上一次显示并退避 5 分钟 —— hub 的历史查询只有 4 个并发名额
+
+### 依赖
+
+- React 19、Vite 8、TypeScript 7、Tailwind 4、uPlot 1.6、lucide-react 1.49
+
+[未发布]: https://github.com/vansour/monitor-theme-Lumina/compare/v0.0.1...HEAD
+[0.0.1]: https://github.com/vansour/monitor-theme-Lumina/releases/tag/v0.0.1
