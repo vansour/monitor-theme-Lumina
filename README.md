@@ -55,7 +55,9 @@ MONITOR_HUB=https://hub.example.com npm run dev
 
 不设 `MONITOR_HUB` 时 `vite` 把 `/api` 与 WebSocket 代理到 `http://127.0.0.1:9911`。在本机起 hub 的写法见文档站的[主题开发](https://monitor-document.pages.dev/dev/theme)页。
 
-构建产物在 `dist/`。提交前跑 `npm run build && npm run lint`。
+构建产物在 `dist/`。提交前跑 `npm run build && npm run lint && npm test`。
+
+`npm test` 盯的是 `src/utils/adapters.ts` 里那几个错了不显眼的地方 —— 流量比的是哪个口径、到期天数谁来算、一条坏上报怎么处置、探测顺序按什么定。没有测试框架，node 自己剥掉类型，失败时退出码非零。
 
 ## 打包
 
