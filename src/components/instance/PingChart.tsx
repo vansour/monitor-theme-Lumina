@@ -4,7 +4,7 @@ import type uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { Eye, EyeOff, RefreshCw } from "lucide-react";
 import { useNodeMetrics } from "@/hooks/useMetrics";
-import { pingSeries } from "@/lib/api";
+import { pingSeriesFrom } from "@/utils/adapters";
 import { InstancePanel } from "./InstancePanel";
 import {
   createAxisSizer,
@@ -25,7 +25,7 @@ import {
 import { latencyHeatColor, lossHeatColor } from "@/utils/metricTone";
 import { useResolvedAppearance } from "@/hooks/usePreferences";
 import { isLostPingSample, isValidPingLatency } from "@/utils/pingValues";
-import type { PingSeriesRecord } from "@/lib/api";
+import type { PingSeriesRecord } from "@/utils/adapters";
 import type { TimedMetricPoint } from "./chartData";
 
 interface TooltipState {
@@ -72,7 +72,7 @@ export function PingChart({
 }) {
   const { data: raw, isLoading, refetch } = useNodeMetrics(nodeId, hours, PING_POINTS, "ping", active);
   const data = useMemo(
-    () => (raw ? pingSeries(raw, hours, PING_POINTS) : undefined),
+    () => (raw ? pingSeriesFrom(raw, hours, PING_POINTS) : undefined),
     [raw, hours],
   );
   const resolvedAppearance = useResolvedAppearance();

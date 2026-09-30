@@ -1,4 +1,5 @@
 import { getNodes } from "@/lib/api";
+import { safeNodes, toDisplay } from "@/utils/adapters";
 import type { Node, NodeDisplay, TrafficTrendSample } from "@/types/monitor";
 
 type Listener = () => void;
@@ -52,164 +53,14 @@ const EMPTY_TRAFFIC_TREND: NodeTrafficTrend = {
   snapshot: EMPTY_NODE_TRAFFIC_TREND_SNAPSHOT,
 };
 
-function emptyState(): State {
-  return { byId: {}, trafficTrends: {}, order: [], hasLoaded: false, failureStreak: 0 };
-}
-
 function num(value: unknown, fallback = 0): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-function pct(used: number, total: number): number {
-  return total > 0 ? (used / total) * 100 : 0;
+function emptyState(): State {
+  return { byId: {}, trafficTrends: {}, order: [], hasLoaded: false, failureStreak: 0 };
 }
 
-/** 上报里的每一个数字字段，都得是有限非负数，不然整条上报作废。 */
-const METRIC_FIELDS = [
-  "uptime",
-  "cpu",
-  "mem_total",
-  "mem_used",
-  "swap_total",
-  "swap_used",
-  "disk_total",
-  "disk_used",
-  "net_rx",
-  "net_tx",
-  "total_rx",
-  "total_tx",
-  "month_rx",
-  "month_tx",
-  "tcp",
-  "udp",
-  "procs",
-] as const;
-
-/**
- * 一条坏上报不该把整页节点带下水。指标不全的节点当作「没有实时数据」，
- * 卡片于是走离线那一套渲染，而不是把 NaN 送进 formatBytes 印成「NaN TB」。
- */
-export function safeNodes(nodes: Node[]): Node[] {
-  const ok = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v >= 0;
-  return nodes.map((node) => {
-    const m = node.metrics;
-    const sound =
-      !!m &&
-      METRIC_FIELDS.every((key) => ok(m[key])) &&
-      Array.isArray(m.load) &&
-      m.load.length === 3 &&
-      m.load.every(ok);
-    return sound ? node : { ...node, metrics: null };
-  });
-}
-
-/**
- * 本计费周期已用流量。hub 会算好（`month_used`），这里的分支只服务于更早的 hub：
- * `traffic_mode` 决定这个套餐是按上行、下行、较大者还是两者之和计量。
- */
-export function monthUsage(node: Node): number {
-  if (typeof node.month_used === "number") return node.month_used;
-  switch (node.traffic_mode) {
-    case "up":
-      return num(node.month_tx);
-    case "down":
-      return num(node.month_rx);
-    case "max":
-      return Math.max(num(node.month_rx), num(node.month_tx));
-    default:
-      return num(node.month_rx) + num(node.month_tx);
-  }
-}
-
-/** 旧版 hub 不给 `expires_in` 时的兜底。按 UTC 算，尽量贴近 hub 的日历。 */
-function daysUntilUtc(expiresAt: string | null | undefined): number | null {
-  if (!expiresAt) return null;
-  const ts = Date.parse(`${expiresAt}T00:00:00Z`);
-  if (Number.isNaN(ts)) return null;
-  const now = new Date();
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  return Math.round((ts - today) / 86_400_000);
-}
-
-/**
- * 剩余天数。hub 给了就用 hub 的 —— 它按自己的日历算，和续费通知口径一致；
- * 用浏览器时钟算，hub 跑 UTC、访客在 UTC+8 时会每个周期提前八小时显示「已过期」。
- *
- * `"expires_in" in node` 而不是 `?? `：`null` 是「没填到期日」这个有效答案，
- * 与「旧版 hub 不认识这个键」是两回事。
- */
-function expireDays(node: Node): number | null {
-  if ("expires_in" in node) return node.expires_in ?? null;
-  return daysUntilUtc(node.expires_at);
-}
-
-/**
- * hub 的三种节点状态各对应一种界面：离线、已连接但还没上报（`online: true` 而
- * `metrics: null`，最容易漏掉的一种）、以及正常在线。中间那种映射成 null，
- * 卡片显示「状态同步中」而不是谎报 0%。
- */
-function onlineState(node: Node): boolean | null {
-  if (!node.online) return false;
-  return node.metrics ? true : null;
-}
-
-function fromNode(node: Node): NodeDisplay {
-  const m = node.metrics;
-  const cpuCores = num(node.cpu_cores);
-  return {
-    id: String(node.id),
-    nodeId: node.id,
-
-    name: node.name ?? "",
-    group: node.group ?? "",
-    region: node.country ?? "",
-    os: node.os ?? "",
-    arch: node.arch ?? "",
-    virtualization: node.virt ?? "",
-    kernel_version: node.kernel ?? "",
-    cpu_name: node.cpu_name ?? "",
-    cpu_cores: cpuCores,
-    mem_total: num(node.mem_total),
-    swap_total: num(node.swap_total),
-    disk_total: num(node.disk_total),
-    price: num(node.price),
-    billing_cycle: node.billing_cycle ?? "",
-    currency: node.currency ?? "",
-    expired_at: node.expires_at ?? "",
-    expiresIn: expireDays(node),
-    traffic_limit: num(node.traffic_limit),
-    traffic_mode: node.traffic_mode ?? "",
-    traffic_reset_day: num(node.traffic_reset_day),
-    monthUsed: monthUsage(node),
-
-    online: onlineState(node),
-    // `last_seen` 是秒，界面统一用毫秒。
-    updatedAt: num(node.last_seen) * 1000,
-    uptime: num(m?.uptime),
-    cpuPct: num(m?.cpu),
-    ramUsed: num(m?.mem_used),
-    ramTotal: num(m?.mem_total) || num(node.mem_total),
-    ramPct: pct(num(m?.mem_used), num(m?.mem_total) || num(node.mem_total)),
-    swapUsed: num(m?.swap_used),
-    swapTotal: num(m?.swap_total) || num(node.swap_total),
-    swapPct: pct(num(m?.swap_used), num(m?.swap_total) || num(node.swap_total)),
-    diskUsed: num(m?.disk_used),
-    diskTotal: num(m?.disk_total) || num(node.disk_total),
-    diskPct: pct(num(m?.disk_used), num(m?.disk_total) || num(node.disk_total)),
-    load1: num(m?.load?.[0]),
-    load5: num(m?.load?.[1]),
-    load15: num(m?.load?.[2]),
-    netUp: num(m?.net_tx),
-    netDown: num(m?.net_rx),
-    trafficUp: num(m?.total_tx) || num(node.total_tx),
-    trafficDown: num(m?.total_rx) || num(node.total_rx),
-    process: num(m?.procs),
-    connectionsTcp: num(m?.tcp),
-    connectionsUdp: num(m?.udp),
-  };
-}
-
-/** 只有真正变了才换对象身份，没变的节点原样复用，卡片就不会白白重渲染。 */
 function sameStatic(a: NodeDisplay, b: NodeDisplay): boolean {
   return (
     a.name === b.name &&
@@ -375,7 +226,7 @@ function applySnapshot(raw: Node[]): void {
 
   for (const node of sorted) {
     const id = String(node.id);
-    const next = fromNode(node);
+    const next = toDisplay(node);
     const prev = state.byId[id];
     order.push(id);
 

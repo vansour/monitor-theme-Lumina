@@ -3,7 +3,8 @@ import { getNodePing } from "@/lib/api";
 import { getNodeSnapshot } from "@/lib/nodes";
 import { useThemeConfig } from "@/hooks/useThemeConfig";
 import { isLostPingSample, isValidPingLatency } from "@/utils/pingValues";
-import type { MetricsResponse, PingOverviewBucket, PingOverviewItem } from "@/types/monitor";
+import { pingOverviewItem } from "@/utils/adapters";
+import type { PingOverviewBucket, PingOverviewItem } from "@/types/monitor";
 
 /** 卡片上的窗口：最近一小时，与分桶窗口一致。 */
 const WINDOW_HOURS = 1;
@@ -73,44 +74,6 @@ function sameItem(a: PingOverviewItem, b: PingOverviewItem): boolean {
   return true;
 }
 
-/**
- * 把一次探测历史读成卡片要的概览。
- *
- * 一个节点可以挂着多个探测，卡片只画一条 —— 取**响应里第一个出现的 task_id**，
- * 不是 `probes` 对象的键序：hub 按 `ping_task.sort, id` 排 `ping` 数组，那个顺序是
- * 稳定的，而对象的键序没有这样的保证，来回换探测会让条带在两条无关的曲线之间跳。
- * 把两个不同目标的探测取平均也不合适 —— 那是个对谁都不成立的数。
- */
-function itemFromResponse(id: string, res: MetricsResponse): PingOverviewItem {
-  const rows = res.ping ?? [];
-  const probeIds = Object.keys(res.probes ?? {});
-  // 还没配探测：这是「未配置」，与「配了但窗口内没有数据」是两回事。
-  if (probeIds.length === 0) {
-    return { ...EMPTY_PING, client: id, isAssigned: false };
-  }
-
-  const firstProbe = rows.length > 0 ? rows[0]!.task_id : Number(probeIds[0]);
-  const mine = rows.filter((row) => row.task_id === firstProbe);
-
-  const samples = mine.map((row) => ({
-    time: row.ts,
-    // hub 的 null（整桶超时）落到负值，下游分桶与着色沿用同一条约定。
-    value: row.latency == null ? -1 : row.latency,
-  }));
-
-  let lastValue: number | null = null;
-  for (const row of mine) {
-    if (row.latency != null) lastValue = row.latency;
-  }
-
-  // hub 的 `loss` 只列出真正丢了包的探测，所以缺席就是 0。一个样本都没有时不报 0 ——
-  // 那是「没有数据」，不是「一个都没丢」。
-  const windowLoss = res.loss?.[String(firstProbe)];
-  const loss = samples.length === 0 ? null : (windowLoss ?? 0);
-
-  return { client: id, isAssigned: true, lastValue, samples, loss };
-}
-
 function staleBeyondWindow(id: string): boolean {
   const node = getNodeSnapshot(id);
   if (!node || node.updatedAt <= 0) return false;
@@ -141,7 +104,7 @@ async function refreshRound(ids: string[]) {
       if (!next) return;
       try {
         const res = await getNodePing(next.nodeId, WINDOW_HOURS);
-        setItem(next.id, itemFromResponse(next.id, res));
+        setItem(next.id, pingOverviewItem(next.id, res));
       } catch {
         // 查不到就保留上一次的显示 —— 「被拒了」和「窗口里没数据」是两回事，
         // 画成一样会把读的人引到错误的结论上。
