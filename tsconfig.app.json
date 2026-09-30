@@ -19,10 +19,19 @@
     "noFallthroughCasesInSwitch": true,
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
+    // 没有 baseUrl：TypeScript 7 把它删了，而 paths 本来就相对本文件解析，
+    // 少了它结果一样。
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    // 只认 vite 的客户端类型，不引 @types/node —— 浏览器代码里出现 process、
+    // Buffer 这类东西应当当场报错。测试文件走 tsconfig.test.json。
+    "types": ["vite/client"],
+    // 让 `import "x.css"` 这类副作用导入有类型可依。
+    "allowArbitraryExtensions": true,
+    // 保证写出来的语法能被 Node 直接剥掉类型执行 —— npm test 就是那么跑的。
+    "erasableSyntaxOnly": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
 }

@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    // 测试在 Node 里跑，断言用的是 node:assert，所以这里要 node 的类型。
+    "types": ["node"],
+    "erasableSyntaxOnly": true
+  },
+  // 只覆盖测试，以及它直接依赖的那几个纯函数与类型 —— 应用代码归 tsconfig.app.json，
+  // 那边的环境是浏览器。同一个文件被两个 project 各看一遍是允许的。
+  "include": ["src/**/*.test.ts", "src/utils/adapters.ts", "src/types/**/*.ts"]
+}
