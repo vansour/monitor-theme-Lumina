@@ -1,0 +1,24 @@
+node_modules/
+dist/
+
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.DS_Store
+Thumbs.db
+
+*.zip
+
+.idea/
+.vscode/
+.codex
+
+.cache/
+coverage/
+
+# 打包产物
+theme.tar.gz
+theme.tar.gz.sha256

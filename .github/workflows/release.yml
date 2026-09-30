@@ -1,0 +1,42 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # hub 的「从 GitHub 更新」比的是 release tag 与 theme.json 的 version，
+      # 两者不等就会每次都提示有更新。tag 一旦推上去就既不能改也不能删，
+      # 所以在发布之前拦住。
+      - if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          V=v$(node -p 'require("./theme.json").version')
+          [ "$GITHUB_REF_NAME" = "$V" ] || { echo "::error::tag $GITHUB_REF_NAME, theme.json $V"; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      # 包里是一个可直接安装的主题目录，不是源码快照：dist/ 与 theme.json 并排，
+      # 正是 hub 从磁盘读主题时的布局。preview.png 放在主题目录里而不是 dist/ 里 ——
+      # 它是面板的缩略图，不是主题要对外提供的文件。
+      - run: tar czf theme.tar.gz dist theme.json preview.png
+      - run: sha256sum theme.tar.gz | cut -d' ' -f1 | tee theme.tar.gz.sha256
+
+      - if: startsWith(github.ref, 'refs/tags/')
+        run: gh release create "$GITHUB_REF_NAME" theme.tar.gz theme.tar.gz.sha256 --generate-notes --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}

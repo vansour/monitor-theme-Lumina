@@ -1,0 +1,45 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import path from "node:path";
+
+// https://vite.dev/config/
+export default defineConfig({
+  base: "/",
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    target: "es2022",
+    cssCodeSplit: false,
+    assetsInlineLimit: 4096,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        entryFileNames: "assets/entry-[name]-[hash].js",
+        chunkFileNames: "assets/chunk-[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          uplot: ["uplot", "uplot-react"],
+          query: ["@tanstack/react-query"],
+        },
+      },
+    },
+  },
+  // 主题只读公开数据，所以任何一个开着状态页的 hub 都能当数据源：
+  // MONITOR_HUB=https://hub.example.com npm run dev
+  server: {
+    port: 5173,
+    proxy: {
+      "/api": {
+        target: process.env.MONITOR_HUB || "http://127.0.0.1:9911",
+        changeOrigin: true,
+        ws: true,
+      },
+    },
+  },
+});

@@ -1,0 +1,67 @@
+{
+  "name": "Lumina",
+  "short": "lumina",
+  "description": "高信息密度的卡片式状态页：首页节点卡片、延迟与丢包条、详情页负载与延迟图表",
+  "version": "2.0.0",
+  "author": "shark & codex",
+  "url": "https://github.com/monitor-probe/monitor-theme-Lumina",
+  "config": [
+    { "type": "title", "label": "外观" },
+    {
+      "key": "default_appearance",
+      "type": "select",
+      "default": "system",
+      "label": "默认外观",
+      "help": "访客自己切换过之后，跟随访客的选择",
+      "options": [
+        { "value": "system", "label": "跟随系统" },
+        { "value": "light", "label": "浅色" },
+        { "value": "dark", "label": "深色" }
+      ]
+    },
+    {
+      "key": "enable_admin_button",
+      "type": "boolean",
+      "default": true,
+      "label": "显示后台入口",
+      "help": "右下角悬浮按钮里的齿轮，指向 /admin/"
+    },
+
+    { "type": "title", "label": "首页" },
+    {
+      "key": "offline_nodes_behind",
+      "type": "boolean",
+      "default": false,
+      "label": "离线节点排在最后",
+      "help": "不改变站长在后台拖出来的相对顺序，只把离线的整体移到后面"
+    },
+    {
+      "key": "show_ping_mini",
+      "type": "boolean",
+      "default": true,
+      "label": "卡片显示延迟与丢包",
+      "help": "每张卡片每分钟向 hub 查一次该节点最近一小时的探测历史。节点多时这些查询会占满 hub 的历史查询队列（同时只跑 4 个，排队超过就返回 503，卡片保留上一次的数据）。关掉可以省下这部分开销。"
+    },
+
+    { "type": "title", "label": "详情页" },
+    {
+      "key": "show_ping_chart",
+      "type": "boolean",
+      "default": true,
+      "label": "显示网络延迟页签"
+    },
+    {
+      "key": "default_range_hours",
+      "type": "select",
+      "default": "6",
+      "label": "默认时间范围",
+      "help": "打开详情页时先画的范围。未登录访客最多 168 小时，登录后 2160 小时。",
+      "options": [
+        { "value": "1", "label": "1 小时" },
+        { "value": "6", "label": "6 小时" },
+        { "value": "24", "label": "24 小时" },
+        { "value": "168", "label": "7 天" }
+      ]
+    }
+  ]
+}

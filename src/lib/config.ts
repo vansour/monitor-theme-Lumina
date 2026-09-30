@@ -1,0 +1,71 @@
+import manifest from "../../theme.json";
+import { api } from "@/lib/api";
+
+/** `theme.json` 里声明的一项设置。 */
+type ConfigField = {
+  key: string;
+  type: "string" | "text" | "number" | "boolean" | "select";
+  label?: string;
+  help?: string;
+  default: unknown;
+  options?: { value: string; label?: string }[];
+  min?: number;
+  max?: number;
+};
+
+export type Config = {
+  default_appearance: "system" | "light" | "dark";
+  enable_admin_button: boolean;
+  offline_nodes_behind: boolean;
+  show_ping_mini: boolean;
+  show_ping_chart: boolean;
+  /** select 的值是字符串，用的时候 `Number()` 一下。 */
+  default_range_hours: string;
+};
+
+const fields = (manifest.config as ConfigField[]).filter((f) => f.type !== undefined && "key" in f);
+
+const defaults = Object.fromEntries(fields.map((f) => [f.key, f.default])) as Config;
+
+/**
+ * 存下来的值能不能被这一项接住。
+ *
+ * hub 保存时不校验 —— 它按 `theme.json` 画完表单就存了 —— 所以读的时候必须自己判：
+ * 一个在旧版本主题下存的值会遇到新版本的读取方。类型不符就当作没设置过。
+ */
+function fits(field: ConfigField, value: unknown): boolean {
+  switch (field.type) {
+    case "boolean":
+      return typeof value === "boolean";
+    case "number":
+      return (
+        typeof value === "number" &&
+        Number.isFinite(value) &&
+        (field.min === undefined || value >= field.min) &&
+        (field.max === undefined || value <= field.max)
+      );
+    case "select":
+      return !!field.options?.some((option) => option.value === value);
+    default:
+      return typeof value === "string";
+  }
+}
+
+/**
+ * 站长改过的设置，其余走 `theme.json` 里声明的默认值。
+ *
+ * 任何失败 —— 还没装这个主题（404）、公开页关着（401）、网络不通 —— 都静默回落到
+ * 默认值：设置读不到不该让整页打不开，也不该弹一个访客看不懂的错。
+ */
+export function loadConfig(): Promise<Config> {
+  return api<Record<string, unknown>>(`/themes/${manifest.short}/config`)
+    .then((saved) => {
+      const picked: Record<string, unknown> = { ...defaults };
+      for (const field of fields) {
+        const value = saved?.[field.key];
+        if (value !== undefined && fits(field, value)) picked[field.key] = value;
+      }
+      return picked as Config;
+    })
+    .catch(() => defaults);
+}

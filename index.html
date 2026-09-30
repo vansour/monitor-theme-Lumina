@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="keywords"
+      content="server monitor, server uptime monitoring, real-time server status, server performance dashboard" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content="A simple server monitor tool." />
+    <title>Monitor</title>
+    <script>
+      // 首帧之前定下外观，否则深色用户会看到一瞬白屏。
+      // 站点级设置不在这里 —— 那类选项按主题契约放 theme.json 的 config 里，
+      // 这里只认访客自己的选择。
+      (() => {
+        const pick = (raw) => {
+          if (raw == null) return null;
+          if (raw === "system" || raw === "light" || raw === "dark") return raw;
+          try {
+            const parsed = JSON.parse(raw);
+            return parsed === "system" || parsed === "light" || parsed === "dark" ? parsed : null;
+          } catch {
+            return null;
+          }
+        };
+
+        let appearance = "system";
+        try {
+          appearance =
+            pick(localStorage.getItem("lumina:appearance")) ??
+            pick(localStorage.getItem("lumina:appearance_default")) ??
+            "system";
+        } catch {
+          appearance = "system";
+        }
+        const resolved =
+          appearance === "system"
+            ? window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : appearance;
+        document.documentElement.dataset.appearance = resolved;
+        document.documentElement.style.colorScheme = resolved;
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.content = resolved === "dark" ? "#000000" : "#F5F5F7";
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root" class="relative z-30"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
