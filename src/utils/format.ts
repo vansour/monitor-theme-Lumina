@@ -1,6 +1,5 @@
 const UNITS = ["B", "KB", "MB", "GB", "TB", "PB"] as const;
-export type ExpireTone = "ok" | "warn" | "critical" | "long" | "none";
-export type TrafficRateUnit = "bps" | "Kbps" | "Mbps" | "Gbps" | "Tbps";
+type TrafficRateUnit = "bps" | "Kbps" | "Mbps" | "Gbps" | "Tbps";
 
 export interface TrafficRateDisplay {
   value: string;
@@ -111,14 +110,6 @@ export function formatOfflineDuration(
   return { value: String(days), unit: "天", full: `离线 ${days} 天` };
 }
 
-export function resolveExpireTone(days: number | null | undefined): ExpireTone {
-  if (days == null || !Number.isFinite(days)) return "none";
-  if (days > 36500) return "long";
-  if (days > 30) return "ok";
-  if (days > 7) return "warn";
-  return "critical";
-}
-
 /**
  * 剩余天数直接由 hub 给定 —— 它按自己的日历算，和续费、通知口径一致。
  * 用访客的浏览器时钟算，在 hub 跑 UTC、访客在 UTC+8 时每个周期都会提前八小时
@@ -126,13 +117,12 @@ export function resolveExpireTone(days: number | null | undefined): ExpireTone {
  *
  * `null` 是没填到期日，与「今天到期」（0）不是一回事。
  */
-export function formatExpireDays(days: number | null | undefined): { value: string; unit: string; tone: ExpireTone } {
-  const tone = resolveExpireTone(days);
-  if (days == null || !Number.isFinite(days)) return { value: "—", unit: "", tone };
-  if (tone === "long") return { value: "长期", unit: "", tone };
-  if (days > 0) return { value: days.toString(), unit: "天", tone };
-  if (days === 0) return { value: "今日", unit: "", tone };
-  return { value: "已过期", unit: "", tone };
+export function formatExpireDays(days: number | null | undefined): { value: string; unit: string } {
+  if (days == null || !Number.isFinite(days)) return { value: "—", unit: "" };
+  if (days > 36500) return { value: "长期", unit: "" };
+  if (days > 0) return { value: days.toString(), unit: "天" };
+  if (days === 0) return { value: "今日", unit: "" };
+  return { value: "已过期", unit: "" };
 }
 
 /** hub 1.3.0 及以前只认这几个名字，之后的版本把别的长度写成 `<n>m`。 */

@@ -25,8 +25,11 @@ import {
 import { latencyHeatColor, lossHeatColor } from "@/utils/metricTone";
 import { useResolvedAppearance } from "@/hooks/usePreferences";
 import { isLostPingSample, isValidPingLatency } from "@/utils/pingValues";
-import type { PingSeriesRecord } from "@/utils/adapters";
+import type { PingSeriesRecord, PingSeriesTask } from "@/utils/adapters";
 import type { TimedMetricPoint } from "./chartData";
+
+/** `data` 还没到时 `tasks` 的空值。常量而不是 `[]`：下游的 useMemo 靠它的身份保持稳定。 */
+const EMPTY_TASKS: PingSeriesTask[] = [];
 
 interface TooltipState {
   show: boolean;
@@ -89,7 +92,10 @@ export function PingChart({
     time: "",
   });
   const isDark = resolvedAppearance === "dark";
-  const tasks = useMemo(() => [...(data?.tasks ?? [])].sort((a, b) => a.id - b.id), [data]);
+  // 顺序照搬适配层，也就是 hub 的行序 —— 后台的 `ping_task.sort, id`：图例、配色与
+  // 统计卡都跟随。这里再按 id 排一次会把它盖掉，而 id 只是创建顺序，与站长拖出来的
+  // 排列无关。
+  const tasks = data?.tasks ?? EMPTY_TASKS;
   const sampleIntervals = data?.sampleIntervals;
   const taskLabels = useMemo(() => {
     const counts = new Map<string, number>();

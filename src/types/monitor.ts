@@ -3,7 +3,7 @@
  *
  * 1. `Node` / `Metrics` / `MetricPoint` / `PingPoint` —— monitor hub 公开接口的原始结构，
  *    字段名与 hub 的 src/api.rs 一一对应。主题只读这些。
- * 2. `NodeDisplay` / `PingOverviewItem` / `TrafficTrendSample` —— 组件层消费的扁平展示模型，
+ * 2. `NodeDisplay` / `TrafficTrendSample` —— 组件层消费的扁平展示模型，
  *    沿用 Lumina 原本的形状，所以组件与 CSS 基本不用改。
  *
  * 契约要求「把每个键都当成可能不存在」：旧版 hub 少字段是常态，读的时候一律给默认值。
@@ -12,7 +12,7 @@
 // ---- hub 公开接口 ----
 
 /** 实时指标。匿名调用只拿到白名单里的键，地址与原始内核计数器都不在其中。 */
-export type Metrics = {
+type Metrics = {
   uptime: number;
   /** 百分比，0–100。 */
   cpu: number;
@@ -87,13 +87,8 @@ export type Me = {
   site: string;
 };
 
-export type NodesResponse = {
-  nodes: Node[];
-  admin: boolean;
-};
-
 /** 一个历史桶。除 `ts` 外都是该桶的均值，`net_*_max` 是桶内峰值。 */
-export type MetricPoint = {
+type MetricPoint = {
   ts: number;
   cpu: number;
   mem_used: number;
@@ -106,7 +101,7 @@ export type MetricPoint = {
 };
 
 /** 一个延迟桶。`latency` 是桶内中位数，整桶全超时是 null。 */
-export type PingPoint = {
+type PingPoint = {
   task_id: number;
   ts: number;
   latency: number | null;
@@ -185,37 +180,6 @@ export interface NodeDisplay {
   process: number;
   connectionsTcp: number;
   connectionsUdp: number;
-}
-
-/** 首页卡片延迟条的一个采样点。 */
-export interface PingSample {
-  time: number;
-  /** 延迟毫秒；负值是丢包标记，沿用 Lumina 的约定。 */
-  value: number;
-}
-
-/** 首页一张卡片的延迟概览。 */
-export interface PingOverviewItem {
-  client: string;
-  /**
-   * 这个节点有没有被分配探测：true 有、false 没有、null 还没查过。
-   * 三种要分开 —— 「没配」是站长的配置事实，还没查出来之前不该替他下结论。
-   */
-  isAssigned: boolean | null;
-  lastValue: number | null;
-  samples: PingSample[];
-  loss: number | null;
-}
-
-/** 延迟条按时间分桶后的一个桶。 */
-export interface PingOverviewBucket {
-  index: number;
-  value: number | null;
-  loss: number | null;
-  total: number;
-  lost: number;
-  startAt: number | null;
-  endAt: number | null;
 }
 
 /** 卡片上网速迷你条的一个点。 */

@@ -4,13 +4,7 @@
  * 单独放一处是因为这里集中了几个容易写错、错了又不显眼的地方 —— 流量比的是哪个
  * 口径、到期天数谁来算、一条坏上报怎么处置。`adapters.test.ts` 盯着它们。
  */
-import type {
-  MetricsResponse,
-  Node,
-  NodeDisplay,
-  PingOverviewItem,
-  PingSample,
-} from "../types/monitor.ts";
+import type { MetricsResponse, Node, NodeDisplay } from "../types/monitor.ts";
 
 function num(value: unknown, fallback = 0): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -193,7 +187,7 @@ export interface PingSeriesTask {
   loss: number;
 }
 
-export interface PingSeries {
+interface PingSeries {
   records: PingSeriesRecord[];
   tasks: PingSeriesTask[];
   /** 按 task id 的字符串形式索引，单位为秒。 */
@@ -246,40 +240,4 @@ export function pingSeriesFrom(
     from: to - hours * 3600,
     to,
   };
-}
-
-/**
- * 首页卡片要的那一条延迟概览。
- *
- * 一个节点可以挂着多个探测，卡片只画一条 —— 取**响应里第一个出现的 task_id**。
- * 把两个不同目标的探测取平均不合适：那是个对谁都不成立的数。
- */
-export function pingOverviewItem(id: string, res: MetricsResponse): PingOverviewItem {
-  const rows = res.ping ?? [];
-  const probeIds = Object.keys(res.probes ?? {});
-  // 还没配探测：这是「未配置」，与「配了但窗口内没有数据」是两回事。
-  if (probeIds.length === 0) {
-    return { client: id, isAssigned: false, lastValue: null, samples: [], loss: null };
-  }
-
-  const firstProbe = rows.length > 0 ? rows[0]!.task_id : Number(probeIds[0]);
-  const mine = rows.filter((row) => row.task_id === firstProbe);
-
-  const samples: PingSample[] = mine.map((row) => ({
-    time: row.ts,
-    // hub 的 null（整桶超时）落到负值，下游分桶与着色沿用同一条约定。
-    value: row.latency == null ? -1 : row.latency,
-  }));
-
-  let lastValue: number | null = null;
-  for (const row of mine) {
-    if (row.latency != null) lastValue = row.latency;
-  }
-
-  // hub 的 `loss` 只列出真正丢了包的探测，所以缺席就是 0。一个样本都没有时不报 0 ——
-  // 那是「没有数据」，不是「一个都没丢」。
-  const windowLoss = res.loss?.[String(firstProbe)];
-  const loss = samples.length === 0 ? null : (windowLoss ?? 0);
-
-  return { client: id, isAssigned: true, lastValue, samples, loss };
 }

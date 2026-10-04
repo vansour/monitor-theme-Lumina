@@ -13,6 +13,27 @@ tag 会被 release 工作流拦下来校验：必须等于 `theme.json` 的版�
 
 ## [未发布]
 
+### 新增
+
+- 站长可以在右上角菜单里上传站点图标（favicon）：登录着后台时多出「站点图标」一栏，选一个 `.ico`（不超过 32 KiB）即可，图标转成 data URL 存进 hub 的主题设置，所有访客下次加载生效，不用重新部署；同一栏里也能移除。这个设置键不写进 `theme.json`（hub 的表单没有文件类型），读取、上限与 ICO 文件头的判定在 `src/utils/favicon.ts`，有对应的 `npm test` 断言
+- 新增 `src/utils/favicon.test.ts`，`npm test` 由三个文件变四个
+
+### 移除
+
+- 首页卡片不再显示延迟与丢包，`show_ping_mini` 设置一并删掉。那一条要每张卡片每三分钟向 hub 查一次探测历史，占 hub 的历史查询名额（同时 4 个，排队超过直接返回 503）；延迟与丢包改到详情页看，首页只留实时推送里就有的东西
+- 随之删掉首页的探测轮询（排队、退避、按视野取数那一套）与它的排期算术 `src/utils/pingSchedule.ts`
+- 清掉约 480 行从未渲染过的样式：上游站内设置面板的 `theme-manage-*`、旧版概览/系列/丢包条残留，以及只被它们用到的 14 个颜色变量与 4 个 `@theme` 条目
+- 删掉无人引用的代码：`lossHeatFraction`、`NodesResponse` 类型、`formatExpireDays` 里从未被读过的 `tone`、`InstancePanel` 的 `description` 与 `Spinner` 的 `size`；只在本文件内部使用的符号不再多余地 `export`，`tsconfig.test.json` 里已删文件的 include 也一并去掉
+
+### 修复
+
+- 详情页延迟图不再按探测 id 排序：图例、配色与下方探测统计卡跟随 hub 的面板顺序（后台拖出来的探测排列），站长调整「延迟检测」的顺序后公开页跟随
+- `Spinner` 引用了一个主题里从未定义过的 `--accent-500`，顶部弧线一直退回继承色；改为主题自己的 `--progress-cpu`
+
+### 文档
+
+- README 删掉「延迟条的开销」与设置表里对应的一行，`npm test` 改为三个文件；主题描述不再提卡片上的延迟与丢包条
+
 ## [0.0.2] - 2026-09-30
 
 ### 新增

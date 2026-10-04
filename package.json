@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "tsc -b --noEmit",
-    "test": "node src/utils/adapters.test.ts && node src/utils/pingSchedule.test.ts && node src/utils/overview.test.ts && node src/utils/grouping.test.ts",
+    "test": "node src/utils/adapters.test.ts && node src/utils/favicon.test.ts && node src/utils/overview.test.ts && node src/utils/grouping.test.ts",
     "package": "tar czf theme.tar.gz dist theme.json preview.png",
     "changelog": "node scripts/changelog.mjs"
   },

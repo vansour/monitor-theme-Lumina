@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface CanvasStripProps {
   className?: string;
@@ -6,8 +6,6 @@ interface CanvasStripProps {
   ariaHidden?: boolean;
   redrawKey?: string | number;
   draw: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
-  getHoverIndex?: (offsetX: number, width: number) => number | null;
-  onHoverIndex?: (index: number | null) => void;
 }
 
 /**
@@ -69,7 +67,7 @@ export function fillRoundedRect(
 }
 
 /**
- * 首页一张卡片就有 8 条画布，节点一多每条各建一个 ResizeObserver 开销可观，
+ * 首页一张卡片就有 6 条画布，节点一多每条各建一个 ResizeObserver 开销可观，
  * 这里全局共用一个实例分发尺寸变化。
  */
 type SizeListener = (width: number) => void;
@@ -107,8 +105,6 @@ export function CanvasStrip({
   ariaHidden = false,
   redrawKey,
   draw,
-  getHoverIndex,
-  onHoverIndex,
 }: CanvasStripProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [width, setWidth] = useState(0);
@@ -147,26 +143,12 @@ export function CanvasStrip({
     draw(ctx, width, height);
   }, [draw, height, redrawKey, width]);
 
-  const handlePointerMove = useCallback(
-    (event: PointerEvent<HTMLCanvasElement>) => {
-      if (!getHoverIndex || !onHoverIndex || width <= 0) return;
-      onHoverIndex(getHoverIndex(event.nativeEvent.offsetX, width));
-    },
-    [getHoverIndex, onHoverIndex, width],
-  );
-
-  const handlePointerLeave = useCallback(() => {
-    onHoverIndex?.(null);
-  }, [onHoverIndex]);
-
   return (
     <canvas
       ref={canvasRef}
       className={className}
       style={{ width: "100%", height }}
       aria-hidden={ariaHidden}
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
     />
   );
 }

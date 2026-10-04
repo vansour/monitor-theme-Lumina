@@ -24,8 +24,8 @@
   "include": [
     "src/**/*.test.ts",
     "src/utils/adapters.ts",
+    "src/utils/favicon.ts",
     "src/utils/grouping.ts",
-    "src/utils/pingSchedule.ts",
     "src/utils/overview.ts",
     "src/types/**/*.ts"
   ]

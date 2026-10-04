@@ -1,10 +1,9 @@
-export function Spinner({ size = 20 }: { size?: number }) {
+export function Spinner() {
   return (
     <span
       role="status"
       aria-label="Loading"
-      className="inline-block animate-spin rounded-full border-2 border-[var(--border-subtle)] border-t-[var(--accent-500)]"
-      style={{ width: size, height: size }}
+      className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[var(--border-subtle)] border-t-[var(--progress-cpu)]"
     />
   );
 }

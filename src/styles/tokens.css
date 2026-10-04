@@ -6,15 +6,9 @@
 :root,
 [data-appearance="light"] {
   --bg-0: #f4f4f5;
-  --bg-1: #ffffff;
 
   --surface: #ffffff;
   --surface-elev: #ffffff;
-  --surface-sunken: #f4f4f5;
-  --shell-bg: #0f0f10;
-  --shell-top: #111112;
-  --shell-title-bg: #0a0a0b;
-  --shell-divider: rgba(255, 255, 255, 0.05);
 
   --border: rgba(24, 24, 27, 0.08);
   --border-subtle: rgba(24, 24, 27, 0.06);
@@ -24,9 +18,7 @@
   --text-primary: #18181b;
   --text-secondary: #52525b;
   --text-tertiary: #71717a;
-  --text-on-strong: #ffffff;
 
-  --fill-primary: #18181b;
   --fill-secondary: rgba(24, 24, 27, 0.1);
   --fill-tertiary: rgba(24, 24, 27, 0.05);
 
@@ -35,16 +27,10 @@
   --progress-bg: #e4e4e7;
   --progress-cpu: #3b82f6;
   --progress-memory: #8b5cf6;
-  --progress-swap: #6366f1;
   --progress-disk: #e97b35;
-  --progress-network: #10b981;
-  --progress-traffic-from: #3b82f6;
-  --progress-traffic-to: #8b5cf6;
 
   --status-success: #2f9e65;
-  --status-warning: #e9a23b;
   --status-error: #dc2626;
-  --status-info: #3b82f6;
   --status-online: #2f9e65;
   --status-offline: #dc2626;
 
@@ -59,15 +45,9 @@
 [data-appearance="dark"] {
   /* Pixel-sampled from reference image */
   --bg-0: #090909;
-  --bg-1: #0d0d0e;
 
   --surface: #0f0f10;
   --surface-elev: #121214;
-  --surface-sunken: #0b0b0c;
-  --shell-bg: #0d0d0e;
-  --shell-top: #111112;
-  --shell-title-bg: #0a0a0b;
-  --shell-divider: rgba(255, 255, 255, 0.05);
 
   --border: rgba(255, 255, 255, 0.055);
   --border-subtle: rgba(255, 255, 255, 0.04);
@@ -77,9 +57,7 @@
   --text-primary: #dddddf;
   --text-secondary: #a5a5aa;
   --text-tertiary: #76767c;
-  --text-on-strong: #0f0f0f;
 
-  --fill-primary: #e6e6e6;
   --fill-secondary: rgba(230, 230, 230, 0.075);
   --fill-tertiary: rgba(230, 230, 230, 0.045);
 
@@ -88,16 +66,10 @@
   --progress-bg: #26262a;
   --progress-cpu: #5d88ff;
   --progress-memory: #a35cf5;
-  --progress-swap: #818cf8;
   --progress-disk: #f1873d;
-  --progress-network: #5bbb8a;
-  --progress-traffic-from: #5d88ff;
-  --progress-traffic-to: #a35cf5;
 
   --status-success: #61c08f;
-  --status-warning: #d4a54a;
   --status-error: #d84e45;
-  --status-info: #5d88ff;
   --status-online: #61c08f;
   --status-offline: #d84e45;
 

@@ -1,4 +1,4 @@
-import { memo, useCallback, useState, type ReactNode } from "react";
+import { memo, useCallback, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   Cpu,
@@ -8,15 +8,12 @@ import {
   Globe,
   ArrowDown,
   ArrowUp,
-  Clock3,
-  Unplug,
   Calendar,
   RefreshCw,
   ExternalLink,
   Power,
 } from "lucide-react";
 import { useNode, useNodeTrafficTrend } from "@/hooks/useNode";
-import { usePingMini, usePingMiniBuckets } from "@/hooks/usePingMini";
 import { useResolvedAppearance } from "@/hooks/usePreferences";
 import {
   formatBytes,
@@ -27,17 +24,11 @@ import {
 
 } from "@/utils/format";
 import { getExpireTextColor } from "@/utils/expireStatus";
-import {
-  latencyHeatColor,
-  lossHeatColor,
-} from "@/utils/metricTone";
 import { Flag } from "@/components/ui/Flag";
 import { MetricBar } from "./MetricBar";
-import { MiniBars } from "./MiniBars";
-import { QualityBars } from "./QualityBars";
 import { CanvasStrip, resolveCssColor } from "./CanvasStrip";
 import { clsx } from "clsx";
-import type { PingOverviewBucket, TrafficTrendSample } from "@/types/monitor";
+import type { TrafficTrendSample } from "@/types/monitor";
 import type { TrafficRateDisplay } from "@/utils/format";
 
 function buildSubtitle(parts: Array<string | null | undefined>) {
@@ -45,37 +36,6 @@ function buildSubtitle(parts: Array<string | null | undefined>) {
     .map((part) => part?.trim())
     .filter((part): part is string => Boolean(part))
     .join(" · ");
-}
-
-function formatBucketWindow(bucket: PingOverviewBucket | null) {
-  if (!bucket || bucket.startAt == null || bucket.endAt == null) {
-    return null;
-  }
-  const start = new Date(bucket.startAt);
-  const end = new Date(bucket.endAt);
-  return `${start.getHours().toString().padStart(2, "0")}:${start
-    .getMinutes()
-    .toString()
-    .padStart(2, "0")} - ${end.getHours().toString().padStart(2, "0")}:${end
-    .getMinutes()
-    .toString()
-    .padStart(2, "0")}`;
-}
-
-function formatLatencyBucketSummary(bucket: PingOverviewBucket | null) {
-  if (!bucket) return "—";
-  if (bucket.value != null) {
-    return `${bucket.value.toFixed(1)} ms`;
-  }
-  return bucket.total > 0 ? "失败" : "无样本";
-}
-
-function formatLossBucketSummary(bucket: PingOverviewBucket | null) {
-  if (!bucket) return "—";
-  if ((bucket.total ?? 0) <= 0 || bucket.loss == null) {
-    return "无样本";
-  }
-  return `${bucket.loss.toFixed(1)}% ${bucket.lost}/${bucket.total}`;
 }
 
 export const NodeCard = memo(function NodeCard({
@@ -86,22 +46,14 @@ export const NodeCard = memo(function NodeCard({
   const resolvedAppearance = useResolvedAppearance();
   const node = useNode(id);
   const trafficTrend = useNodeTrafficTrend(id);
-  const ping = usePingMini(id);
-  const pingBuckets = usePingMiniBuckets(ping);
-  const [hoveredLatencyIndex, setHoveredLatencyIndex] = useState<number | null>(null);
-  const [hoveredLossIndex, setHoveredLossIndex] = useState<number | null>(null);
-  const hoveredLatencyBucket =
-    hoveredLatencyIndex != null ? (pingBuckets[hoveredLatencyIndex] ?? null) : null;
-  const hoveredLossBucket =
-    hoveredLossIndex != null ? (pingBuckets[hoveredLossIndex] ?? null) : null;
-  const latencyHoverTime = formatBucketWindow(hoveredLatencyBucket);
-  const lossHoverTime = formatBucketWindow(hoveredLossBucket);
 
   if (!node) {
     return (
       <div
         className="server-card animate-pulse"
-        style={{ minHeight: 438 }}
+        // 与卡片实测高度一致（桌面栅格 401px），骨架不该比真卡片高或矮；
+        // 同一数字在 surface.css 的 contain-intrinsic-size 里也有一份。
+        style={{ minHeight: 401 }}
         aria-busy
       />
     );
@@ -110,20 +62,10 @@ export const NodeCard = memo(function NodeCard({
   const expire = formatExpireDays(node.expiresIn);
   const uptime = formatUptimeDays(node.uptime);
   const subtitle = buildSubtitle([node.os, node.arch, node.virtualization]);
-  const latencyColor = latencyHeatColor(ping.lastValue);
-  const lossColor = lossHeatColor(ping.loss);
-  const latencyHoverColor = hoveredLatencyBucket?.value != null
-    ? latencyHeatColor(hoveredLatencyBucket.value)
-    : "var(--text-tertiary)";
   const loadBaseline = node.cpu_cores > 0 ? node.cpu_cores : 4;
   const loadFraction = Math.max(0, Math.min(1, node.load1 / loadBaseline));
   const upRate = formatTrafficRate(node.netUp);
   const downRate = formatTrafficRate(node.netDown);
-  const lossHoverColor = hoveredLossBucket ? lossHeatColor(hoveredLossBucket.loss) : null;
-  // true 有探测、false 这个节点没配、null 还没查过。
-  // 中间那种是「配了但窗口里没有数据」，与「压根没配」不是一回事。
-  const pingReady = ping.isAssigned === true;
-  const pingEmptyText = ping.isAssigned === false ? "未配置" : "无样本";
   const isOnline = node.online === true;
   const isOffline = node.online === false;
   const offlineFor = isOffline ? formatOfflineDuration(node.updatedAt) : null;
@@ -265,96 +207,6 @@ export const NodeCard = memo(function NodeCard({
               icon={<ArrowDown size={15} strokeWidth={2.4} />}
             />
           </div>
-
-          <div className="card-metric-section card-metric-divided server-health-grid">
-            <div className="server-health-block">
-              <div className="server-health-head">
-                <div className="server-health-label">
-                  <Clock3 size={13} strokeWidth={2} />
-                  <span>延迟</span>
-                </div>
-                <span className="server-health-value tabular" style={{ color: latencyColor }}>
-                  {ping.lastValue != null ? (
-                    <>
-                      {Math.round(ping.lastValue)}
-                      <span className="server-health-unit">ms</span>
-                    </>
-                  ) : (
-                    <span className="server-health-empty" title={pingEmptyText}>
-                      {ping.isAssigned == null ? "—" : pingEmptyText}
-                    </span>
-                  )}
-                </span>
-              </div>
-              <div className="server-health-chart-wrap">
-                {pingReady ? (
-                  <MiniBars
-                    buckets={pingBuckets}
-                    redrawKey={resolvedAppearance}
-                    onHoverIndex={setHoveredLatencyIndex}
-                  />
-                ) : (
-                  <div className="server-health-placeholder">
-                    {ping.isAssigned === false ? "未配置探测" : ""}
-                  </div>
-                )}
-                {latencyHoverTime && hoveredLatencyBucket && (
-                  <div className="server-health-tooltip">
-                    <div className="instance-chart-tooltip-time">{latencyHoverTime}</div>
-                    <div className="instance-chart-tooltip-row">
-                      <span className="instance-chart-tooltip-dot" style={{ background: latencyHoverColor }} />
-                      <span>延迟</span>
-                      <strong>{formatLatencyBucketSummary(hoveredLatencyBucket)}</strong>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="server-health-block">
-              <div className="server-health-head">
-                <div className="server-health-label">
-                  <Unplug size={13} strokeWidth={2} />
-                  <span>丢包率</span>
-                </div>
-                <span className="server-health-value tabular" style={{ color: lossColor }}>
-                  {ping.loss != null ? (
-                    <>
-                      {ping.loss.toFixed(1)}
-                      <span className="server-health-unit">%</span>
-                    </>
-                  ) : (
-                    <span className="server-health-empty" title={pingEmptyText}>
-                      {ping.isAssigned == null ? "—" : pingEmptyText}
-                    </span>
-                  )}
-                </span>
-              </div>
-              <div className="server-health-chart-wrap">
-                {pingReady ? (
-                  <QualityBars
-                    value={ping.loss}
-                    buckets={pingBuckets}
-                    redrawKey={resolvedAppearance}
-                    onHoverIndex={setHoveredLossIndex}
-                  />
-                ) : (
-                  <div className="server-health-placeholder">
-                    {ping.isAssigned === false ? "未配置探测" : ""}
-                  </div>
-                )}
-                {lossHoverTime && hoveredLossBucket && (
-                  <div className="server-health-tooltip">
-                    <div className="instance-chart-tooltip-time">{lossHoverTime}</div>
-                    <div className="instance-chart-tooltip-row">
-                      <span className="instance-chart-tooltip-dot" style={{ background: lossHoverColor ?? lossColor }} />
-                      <span>丢包率</span>
-                      <strong>{formatLossBucketSummary(hoveredLossBucket)}</strong>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="server-card-footer">
@@ -445,7 +297,7 @@ function TrafficDotStrip({
   color: string;
   redrawKey: string;
 }) {
-  // useCallback 固定 draw 身份，避免卡片上无关状态（如 ping hover）变化时重绘画布。
+  // useCallback 固定 draw 身份，避免卡片重渲染时重绘画布。
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
       if (samples.length === 0) return;

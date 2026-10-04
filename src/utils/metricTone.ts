@@ -63,11 +63,3 @@ export function lossHeatColor(pct: number | null | undefined): string {
   const t = clamp((pct - 10) / 20, 0, 1);
   return toHsl(30 - 24 * t, 86 - 2 * t, 52 - 8 * t);
 }
-
-export function lossHeatFraction(pct: number | null | undefined): number {
-  if (pct == null || !Number.isFinite(pct) || pct <= 0) {
-    return 0;
-  }
-
-  return clamp(pct / 10, 0.08, 1);
-}

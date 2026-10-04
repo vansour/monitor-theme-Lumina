@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type uPlot from "uplot";
 
-export interface TimeRangeOption {
+interface TimeRangeOption {
   label: string;
   value: number;
 }
@@ -13,7 +13,7 @@ export interface TimeRangeOption {
  * 用 `maxHours` 挡掉超出的那几档。`maxHours` 就是 hub 的窗口上限：匿名 168 小时，
  * 登录后 2160，超出会被静默截断，与其画出一段没有数据的空区间，不如不列。
  */
-export const LOAD_TIME_RANGE_OPTIONS: TimeRangeOption[] = [
+const LOAD_TIME_RANGE_OPTIONS: TimeRangeOption[] = [
   { label: "实时", value: 0 },
   { label: "1 小时", value: 1 },
   { label: "6 小时", value: 6 },
@@ -23,7 +23,7 @@ export const LOAD_TIME_RANGE_OPTIONS: TimeRangeOption[] = [
 ];
 
 /** 延迟没有「实时」这一档：探测记录每分钟才落一次，秒级窗口没意义。 */
-export const PING_TIME_RANGE_OPTIONS: TimeRangeOption[] = [
+const PING_TIME_RANGE_OPTIONS: TimeRangeOption[] = [
   { label: "1 小时", value: 1 },
   { label: "6 小时", value: 6 },
   { label: "1 天", value: 24 },
@@ -90,7 +90,7 @@ function getDateParts(timestampSeconds: number) {
  * 轴标签跟随实际刻度间隔自适应：跨天用 MM/DD、日内用 HH:MM、
  * 放大到分钟以内再补上秒，缩放后也不会出现整排重复的标签。
  */
-export function formatAxisTimeLabel(timestampSeconds: number, incrSeconds: number) {
+function formatAxisTimeLabel(timestampSeconds: number, incrSeconds: number) {
   const parts = getDateParts(timestampSeconds);
   if (incrSeconds >= DAY_SECONDS) return `${parts.month}/${parts.day}`;
   if (parts.hour === "00" && parts.minute === "00" && parts.second === "00") {
@@ -178,7 +178,7 @@ export function decimalsForIncrement(incrementValue: number, maxDecimals = 4) {
   return Math.min(maxDecimals, Math.max(0, digits));
 }
 
-export function formatTooltipTime(timestampSeconds: number, withDate = false): string {
+function formatTooltipTime(timestampSeconds: number, withDate = false): string {
   const parts = getDateParts(timestampSeconds);
   if (withDate) {
     return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
@@ -207,7 +207,7 @@ export function formatCursorTime(self: uPlot, timestampSeconds: number): string 
   return formatTooltipTime(timestampSeconds, withDate);
 }
 
-export function formatChartCoverageTime(timestampSeconds: number): string {
+function formatChartCoverageTime(timestampSeconds: number): string {
   const parts = getDateParts(timestampSeconds);
   return `${parts.month}/${parts.day} ${parts.hour}:${parts.minute}`;
 }

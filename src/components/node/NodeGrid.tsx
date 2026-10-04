@@ -1,8 +1,6 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useNodeGroups, useOfflineNodeIds, useVisibleNodeIds } from "@/hooks/useNode";
-import { useHomepagePingOverview } from "@/hooks/usePingMini";
-import type { PingCellRegistrar } from "@/hooks/usePingMini";
 import { useThemeConfig } from "@/hooks/useThemeConfig";
 import { offlineLast } from "@/utils/grouping";
 import type { NodeGroup } from "@/utils/grouping";
@@ -57,7 +55,6 @@ export function NodeGrid() {
   const offline = useOfflineNodeIds();
   const groups = useNodeGroups();
   const { data: config } = useThemeConfig();
-  const registerPingCell = useHomepagePingOverview(ids);
 
   // null = 全部。不用字符串哨兵：分组名是站长随手填的，什么都可能出现。
   const [filter, setFilter] = useState<string | null>(null);
@@ -97,12 +94,7 @@ export function NodeGrid() {
   // 分区标题是唯一的分组线索，不能省。
   const grouped = config?.group_nodes !== false && groups.some((group) => group.name !== "");
   if (!grouped) {
-    return (
-      <CardGrid
-        ids={offlineBehind ? offlineLast(ids, offline) : ids}
-        registerPingCell={registerPingCell}
-      />
-    );
+    return <CardGrid ids={offlineBehind ? offlineLast(ids, offline) : ids} />;
   }
 
   // 选中的分组可能已经改名或一个节点都不剩了，回落「全部」——不然后面是一片空白。
@@ -185,7 +177,6 @@ export function NodeGrid() {
               panelId={panelId}
               hidden={isCollapsed}
               ids={groupIds.get(group.name) ?? group.ids}
-              registerPingCell={registerPingCell}
             />
           </section>
         );
@@ -197,55 +188,24 @@ export function NodeGrid() {
 /**
  * 一组卡片的网格：分组时每节一个，平铺时整页一个。
  *
- * 折叠与筛选都只加 `hidden`，卡片留在 DOM 里 —— 探测的 job、缓存、画布都不丢，
- * 展开时不用重新拉数据，隐藏的那些也自然不再轮询（不在视野里就不查）。
+ * 折叠与筛选都只加 `hidden`，卡片留在 DOM 里 —— 画布不丢，展开时不用重画。
  * Tailwind preflight 里那条 `[hidden]{display:none!important}` 压得住这里的
  * `display:grid`，不用再补一道。
  */
 function CardGrid({
   ids,
-  registerPingCell,
   panelId,
   hidden,
 }: {
   ids: string[];
-  registerPingCell: PingCellRegistrar;
   panelId?: string;
   hidden?: boolean;
 }) {
   return (
     <div className="node-card-grid" id={panelId} hidden={hidden}>
       {ids.map((id) => (
-        <GridCell key={id} id={id} registerPingCell={registerPingCell} />
+        <NodeCard key={id} id={id} />
       ))}
     </div>
   );
 }
-
-/**
- * 延迟轮询要知道卡片在不在视野里，观察的是**这个栅格单元格**而不是卡片本身：
- * NodeCard 在节点数据还没到时渲染的是另一个 div，卡片根节点会换，而这个 wrapper
- * 从挂到卸始终是同一个。
- */
-const GridCell = memo(function GridCell({
-  id,
-  registerPingCell,
-}: {
-  id: string;
-  registerPingCell: PingCellRegistrar;
-}) {
-  // 回调必须是块体：React 19 会把 ref 回调的返回值当成清理函数，返回了东西就
-  // 收不到卸载通知了。
-  const setRef = useCallback(
-    (element: HTMLDivElement | null) => {
-      registerPingCell(id, element);
-    },
-    [id, registerPingCell],
-  );
-
-  return (
-    <div ref={setRef}>
-      <NodeCard id={id} />
-    </div>
-  );
-});

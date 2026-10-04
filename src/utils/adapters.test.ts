@@ -12,7 +12,6 @@ import {
   expireDays,
   monthUsage,
   onlineState,
-  pingOverviewItem,
   pingSeriesFrom,
   safeNodes,
   sampleStep,
@@ -210,6 +209,20 @@ test("probe order comes from the rows, not from object key order", () => {
   assert.deepEqual(series.sampleIntervals, { "1": 60, "3": 60 });
 });
 
+test("a probe dragged ahead of a larger id stays first", () => {
+  // The panel can drag a probe anywhere, so a consumer that re-sorts by id
+  // undoes this. The detail chart hands out legend slots and colours by index.
+  const res = pingResponse({
+    probes: { "1": "电信", "3": "移动" },
+    ping: [
+      { task_id: 3, ts: 1000, latency: 90 },
+      { task_id: 1, ts: 1000, latency: 40 },
+    ],
+  });
+  const series = pingSeriesFrom(res, 1, 60, 1_700_000_000_000);
+  assert.deepEqual(series.tasks.map((t) => t.id), [3, 1], "panel order, not id order");
+});
+
 test("a bucket where every probe timed out becomes a gap", () => {
   const res = pingResponse({
     probes: { "1": "电信" },
@@ -220,34 +233,6 @@ test("a bucket where every probe timed out becomes a gap", () => {
   });
   const series = pingSeriesFrom(res, 1, 60, 1_700_000_000_000);
   assert.deepEqual(series.records.map((r) => r.value), [40, -1], "null latency is the loss sentinel");
-});
-
-test("a card shows 未配置 only when the node really has no probes", () => {
-  const unassigned = pingOverviewItem("7", pingResponse());
-  assert.equal(unassigned.isAssigned, false, "no probes at all");
-
-  // Assigned but the window is empty: a different answer, and not a claim of 0% loss.
-  const quiet = pingOverviewItem("7", pingResponse({ probes: { "1": "电信" } }));
-  assert.equal(quiet.isAssigned, true);
-  assert.equal(quiet.samples.length, 0);
-  assert.equal(quiet.loss, null, "no samples is not 'nothing was lost'");
-  assert.equal(quiet.lastValue, null);
-
-  // With samples, a probe absent from `loss` lost nothing.
-  const busy = pingOverviewItem(
-    "7",
-    pingResponse({
-      probes: { "1": "电信" },
-      ping: [
-        { task_id: 1, ts: 1000, latency: 41 },
-        { task_id: 1, ts: 1060, latency: null },
-      ],
-    }),
-  );
-  assert.equal(busy.isAssigned, true);
-  assert.equal(busy.lastValue, 41, "the last bucket that answered");
-  assert.equal(busy.loss, 0, "absent from `loss` means nothing was lost");
-  assert.deepEqual(busy.samples.map((s) => s.value), [41, -1]);
 });
 
 console.log(`adapters: ${passed} tests passed`);

@@ -1,22 +1,5 @@
 /* Lumina — surface + pixel-matched server-card styles. */
 
-.surface-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--shadow-card);
-}
-
-.surface-inset {
-  background: var(--surface-sunken);
-  border: 1px solid var(--hairline);
-  border-radius: 10px;
-}
-
-.hairline {
-  border: 1px solid var(--hairline);
-}
-
 /* 与卡片同一套材质：实心、细边、卡片阴影 —— 浮在内容上也不发虚。 */
 .control-button {
   background: var(--surface);
@@ -165,6 +148,28 @@
   color: var(--text-primary);
 }
 
+.floating-panel-option:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.floating-panel-option:disabled:hover {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+/* 站点图标那一行的反馈与说明：状态、错误、字数上限共用一条。 */
+.floating-panel-note {
+  margin: 6px 8px 2px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.floating-panel-note[data-error="true"] {
+  color: var(--status-error);
+}
+
 .floating-panel-divider {
   height: 1px;
   margin: 8px 6px;
@@ -182,147 +187,6 @@
     top: max(1.25rem, env(safe-area-inset-top));
     right: max(1.25rem, env(safe-area-inset-right));
   }
-}
-
-.theme-manage-toolbar-actions {
-  display: inline-flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.theme-manage-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 36px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border-strong) 62%, transparent);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-elev) 94%, white 6%) 0%,
-      color-mix(in srgb, var(--surface) 100%, transparent) 100%
-    );
-  box-shadow:
-    0 14px 28px -24px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
-  color: var(--text-primary);
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-  transition:
-    transform 160ms ease,
-    background 160ms ease,
-    color 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease;
-}
-
-.theme-manage-button:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--border-strong) 88%, transparent);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-elev) 90%, var(--hover-bg) 10%) 0%,
-      color-mix(in srgb, var(--hover-bg) 54%, var(--surface)) 100%
-    );
-  box-shadow:
-    0 18px 32px -24px rgba(0, 0, 0, 0.52),
-    inset 0 1px 0 color-mix(in srgb, white 22%, transparent);
-}
-
-.theme-manage-button:active {
-  transform: translateY(0);
-}
-
-.theme-manage-button:disabled {
-  opacity: 0.48;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.theme-manage-button.is-primary {
-  color: var(--text-on-strong);
-  border-color: color-mix(in srgb, var(--progress-cpu) 58%, black 42%);
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--progress-cpu) 88%, white 12%) 0%,
-      color-mix(in srgb, var(--progress-memory) 42%, var(--progress-cpu) 58%) 100%
-    );
-  box-shadow:
-    0 18px 34px -24px color-mix(in srgb, var(--progress-cpu) 44%, black 56%),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24);
-}
-
-.theme-manage-button.is-primary:hover {
-  border-color: color-mix(in srgb, var(--progress-cpu) 72%, white 28%);
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--progress-cpu) 82%, white 18%) 0%,
-      color-mix(in srgb, var(--progress-memory) 48%, var(--progress-cpu) 52%) 100%
-    );
-}
-
-.theme-manage-button.is-compact {
-  min-height: 32px;
-  padding: 0 12px;
-  gap: 6px;
-  font-size: 11px;
-}
-
-.theme-manage-button.is-danger {
-  color: color-mix(in srgb, var(--status-offline) 76%, var(--text-primary) 24%);
-  border-color: color-mix(in srgb, var(--status-offline) 22%, transparent);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--status-offline) 9%, var(--surface-elev)) 0%,
-      color-mix(in srgb, var(--status-offline) 6%, var(--surface)) 100%
-    );
-}
-
-.theme-manage-button.is-danger:hover {
-  color: color-mix(in srgb, var(--status-offline) 84%, var(--text-primary) 16%);
-  border-color: color-mix(in srgb, var(--status-offline) 34%, transparent);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--status-offline) 12%, var(--surface-elev)) 0%,
-      color-mix(in srgb, var(--status-offline) 9%, var(--surface)) 100%
-    );
-}
-
-.theme-manage-inline-link {
-  color: var(--progress-cpu);
-  font-weight: 650;
-  text-decoration: none;
-  transition: color 160ms ease;
-}
-
-.theme-manage-inline-link:hover {
-  color: color-mix(in srgb, var(--progress-cpu) 78%, white 22%);
-}
-
-.theme-manage-empty-state {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px 14px;
-  padding: 14px 16px;
-  border: 1px solid color-mix(in srgb, var(--progress-cpu) 16%, var(--hairline));
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--progress-cpu) 6%, var(--surface));
-  color: var(--text-secondary);
-  font-size: 13px;
 }
 
 .site-footer {
@@ -386,12 +250,6 @@
   letter-spacing: -0.02em;
 }
 
-.instance-panel-description {
-  margin: 0;
-  color: var(--text-tertiary);
-  font-size: 11px;
-}
-
 .instance-panel-aside {
   color: var(--text-tertiary);
 }
@@ -446,45 +304,12 @@
   font-size: 12px;
 }
 
-.instance-hero-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  flex: 0 0 auto;
-}
-
 .instance-hero-actions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
-}
-
-.instance-back-link,
-.instance-icon-button {
-  display: inline-grid;
-  place-items: center;
-  height: 34px;
-  padding: 0 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border-subtle);
-  background: color-mix(in srgb, var(--fill-tertiary) 70%, transparent);
-  color: var(--text-secondary);
-  font-size: 12px;
-  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
-}
-
-.instance-icon-button {
-  width: 34px;
-  padding: 0;
-}
-
-.instance-back-link:hover,
-.instance-icon-button:hover {
-  color: var(--text-primary);
-  border-color: var(--border-strong);
-  background: var(--hover-bg);
 }
 
 .instance-state-chip {
@@ -505,39 +330,6 @@
   color: var(--status-offline);
   border-color: color-mix(in srgb, var(--status-offline) 24%, transparent);
   background: color-mix(in srgb, var(--status-offline) 12%, var(--surface));
-}
-
-.instance-metric-grid,
-.instance-traffic-grid,
-.instance-health-grid,
-.instance-meta-grid,
-.instance-details-grid,
-.instance-series-grid,
-.instance-ping-grid,
-.instance-overview-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 18px;
-}
-
-.instance-traffic-grid,
-.instance-health-grid,
-.instance-meta-grid {
-  margin-top: 16px;
-}
-
-.instance-meta-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-top: 1px solid var(--hairline);
-  padding-top: 14px;
-}
-
-.instance-detail-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
 }
 
 .instance-info-groups {
@@ -605,54 +397,6 @@
   font-weight: 500;
 }
 
-.instance-overview-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 76px;
-  padding: 12px 14px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--surface-elev) 92%, transparent);
-}
-
-.instance-overview-grid.is-compact {
-  gap: 10px;
-}
-
-.instance-overview-grid.is-compact .instance-overview-item {
-  min-height: 66px;
-  padding: 10px 12px;
-}
-
-.instance-overview-item.is-wide {
-  grid-column: span 2;
-}
-
-.instance-overview-value {
-  color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.55;
-  word-break: break-word;
-}
-
-.instance-overview-note,
-.instance-overview-multi {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: var(--text-tertiary);
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.instance-traffic-quota {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .instance-progress-track {
   height: 8px;
   overflow: hidden;
@@ -668,91 +412,12 @@
   background: linear-gradient(90deg, var(--progress-cpu) 0%, var(--progress-memory) 100%);
 }
 
-.instance-detail-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 11px 0;
-  border-top: 1px solid var(--hairline);
-}
-
-.instance-detail-row:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-
-.instance-detail-label {
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.instance-detail-value {
-  color: var(--text-primary);
-  font-size: 12.5px;
-  text-align: right;
-  word-break: break-word;
-}
-
-.instance-detail-mono {
-  font-family: var(--font-mono);
-  font-size: 11px;
-}
-
-.instance-detail-tags,
-.instance-detail-note {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--hairline);
-}
-
-.instance-detail-note p {
-  margin: 10px 0 0;
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 1.65;
-}
-
-.instance-series-card {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  padding: 16px;
-  background: color-mix(in srgb, var(--surface-elev) 92%, transparent);
-}
-
-.instance-series-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
 .instance-series-stats {
   display: flex;
   flex-direction: column;
   gap: 4px;
   align-items: flex-end;
   font-size: 12px;
-}
-
-.instance-series-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 46px;
-}
-
-.instance-series-bars.is-tall {
-  height: 96px;
-}
-
-.instance-series-bars > span {
-  flex: 1 1 0;
-  min-width: 1px;
-  border-radius: 3px;
 }
 
 .instance-chart-controls {
@@ -1025,11 +690,6 @@
   font-family: var(--font-sans);
 }
 
-.instance-uplot-wrap .u-title,
-.instance-uplot-wrap .u-legend {
-  display: none;
-}
-
 .instance-uplot-wrap.is-large {
   margin-top: 16px;
 }
@@ -1159,33 +819,6 @@
   opacity: 0.45;
 }
 
-.instance-loss-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.instance-loss-row {
-  display: grid;
-  grid-template-columns: minmax(0, 110px) minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-}
-
-.instance-loss-meter {
-  height: 10px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--progress-bg);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.22);
-}
-
-.instance-loss-fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-}
-
 .instance-empty {
   display: flex;
   min-height: 140px;
@@ -1229,7 +862,9 @@
   border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
   border-radius: 18px;
   content-visibility: auto;
-  contain-intrinsic-size: 438px;
+  /* 卡片实测高度（桌面栅格 401px），用于屏幕外卡片的占位；改了卡片结构要同步
+     NodeCard 骨架的 minHeight。 */
+  contain-intrinsic-size: 401px;
   box-shadow: var(--shadow-card);
   overflow: hidden;
   transition:
@@ -1425,24 +1060,6 @@
   height: 10px;
 }
 
-.metric-segment {
-  flex: 1 1 0;
-  min-width: 1px;
-  height: 100%;
-  border-radius: 2px;
-  background: var(--progress-bg);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.18);
-  transition:
-    opacity 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
-    background-position 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
-/* Internal hairline dividers — solid #212121 in dark, #e4e4e7 in light */
-.card-metric-section + .card-metric-section.card-metric-divided {
-  padding-top: 12px;
-  border-top: 1px solid var(--hairline);
-}
-
 .server-traffic-section {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1458,7 +1075,6 @@
 
 .traffic-stat-head,
 .traffic-stat-foot,
-.server-health-head,
 .server-card-meta {
   display: flex;
   align-items: center;
@@ -1468,7 +1084,6 @@
 }
 
 .traffic-stat-label,
-.server-health-label,
 .server-card-meta-label {
   display: inline-flex;
   align-items: center;
@@ -1501,18 +1116,6 @@
   height: 10px;
 }
 
-.traffic-dot {
-  width: 4px;
-  height: 4px;
-  justify-self: center;
-  border-radius: 999px;
-  transition:
-    transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
-    background-color 0.3s ease,
-    opacity 0.3s ease,
-    box-shadow 0.3s ease;
-}
-
 .traffic-stat-live {
   display: inline-flex;
   align-items: center;
@@ -1541,31 +1144,11 @@
 }
 
 .traffic-stat-unit,
-.server-health-unit,
 .server-card-meta-unit {
   margin-left: 2px;
   color: var(--text-tertiary);
   font-size: 11px;
   font-weight: 500;
-}
-
-.server-health-empty {
-  color: var(--text-tertiary);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.server-health-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 16px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--surface-elev) 56%, transparent);
-  color: var(--text-tertiary);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
 }
 
 .traffic-stat-foot {
@@ -1580,52 +1163,11 @@
   min-width: 0;
 }
 
-.server-health-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.server-health-block {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-}
-
-.server-health-chart-wrap {
-  position: relative;
-}
-
-.server-health-tooltip {
-  position: absolute;
-  left: 0;
-  bottom: calc(100% + 8px);
-  z-index: 16;
-  min-width: 140px;
-  max-width: 220px;
-  border: 1px solid color-mix(in srgb, var(--border-strong) 86%, black 14%);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-elev) 98%, black 2%);
-  box-shadow:
-    0 20px 40px -22px rgba(0, 0, 0, 0.72),
-    0 8px 18px -14px rgba(0, 0, 0, 0.5);
-  padding: 9px 10px;
-  backdrop-filter: blur(14px);
-}
-
-.server-health-value,
 .server-card-meta-value {
   flex: 0 0 auto;
   font-size: 16px;
   font-weight: 640;
   letter-spacing: -0.03em;
-}
-
-.mini-bar-row {
-  display: block;
-  width: 100%;
-  height: 16px;
 }
 
 .server-card-footer {
@@ -1784,7 +1326,7 @@
 
 /* ---- 首页分组 ----
    卡片按 hub 里的分组分区，上面的标签栏可以只看某一组。
-   折叠与筛选都只给元素加 `hidden`：卡片留在 DOM 里，探测的 job、缓存与画布都不丢，
+   折叠与筛选都只给元素加 `hidden`：卡片留在 DOM 里，画布不丢，
    展开时不用重新拉数据，隐藏的那些也自然不再轮询。preflight 里那条
    `[hidden]{display:none!important}` 压得住 `.node-card-grid` 的 `display:grid`。 */
 
@@ -1907,15 +1449,7 @@
     justify-content: flex-start;
   }
 
-  .instance-metric-grid,
-  .instance-traffic-grid,
-  .instance-health-grid,
-  .instance-meta-grid,
-  .instance-details-grid,
-  .instance-series-grid,
-  .instance-chart-grid,
-  .instance-ping-grid,
-  .instance-overview-grid {
+  .instance-chart-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1932,20 +1466,11 @@
     justify-content: flex-start;
   }
 
-  .instance-overview-item.is-wide {
-    grid-column: auto;
-  }
-
-  .instance-info-groups {
+    .instance-info-groups {
     grid-template-columns: 1fr;
   }
 
-  .instance-loss-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .instance-chart-toolbar,
+    .instance-chart-toolbar,
   .instance-ping-toolbar {
     justify-content: flex-start;
     overflow-x: auto;
@@ -2013,7 +1538,6 @@
   }
 
   .server-traffic-section,
-  .server-health-grid,
   .server-card-meta-grid {
     grid-template-columns: 1fr;
     gap: 14px;
