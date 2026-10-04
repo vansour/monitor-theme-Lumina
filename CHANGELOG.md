@@ -13,6 +13,8 @@ tag 会被 release 工作流拦下来校验：必须等于 `theme.json` 的版�
 
 ## [未发布]
 
+## [0.0.3] - 2026-10-04
+
 ### 新增
 
 - 站长可以在右上角菜单里上传站点图标（favicon）：登录着后台时多出「站点图标」一栏，选一个 `.ico`（不超过 32 KiB）即可，图标转成 data URL 存进 hub 的主题设置，所有访客下次加载生效，不用重新部署；同一栏里也能移除。这个设置键不写进 `theme.json`（hub 的表单没有文件类型），读取、上限与 ICO 文件头的判定在 `src/utils/favicon.ts`，有对应的 `npm test` 断言
@@ -32,7 +34,7 @@ tag 会被 release 工作流拦下来校验：必须等于 `theme.json` 的版�
 
 ### 文档
 
-- README 删掉「延迟条的开销」与设置表里对应的一行，`npm test` 改为三个文件；主题描述不再提卡片上的延迟与丢包条
+- README 删掉「延迟条的开销」与设置表里对应的一行；主题描述不再提卡片上的延迟与丢包条；新增「站点图标」与上传接口的说明，`npm test` 的文件数随之调整
 
 ## [0.0.2] - 2026-09-30
 
@@ -92,6 +94,7 @@ tag 会被 release 工作流拦下来校验：必须等于 `theme.json` 的版�
 
 - React 19、Vite 8、TypeScript 7、Tailwind 4、uPlot 1.6、lucide-react 1.49
 
-[未发布]: https://github.com/vansour/monitor-theme-Lumina/compare/v0.0.2...HEAD
+[未发布]: https://github.com/vansour/monitor-theme-Lumina/compare/v0.0.3...HEAD
+[0.0.3]: https://github.com/vansour/monitor-theme-Lumina/releases/tag/v0.0.3
 [0.0.2]: https://github.com/vansour/monitor-theme-Lumina/releases/tag/v0.0.2
 [0.0.1]: https://github.com/vansour/monitor-theme-Lumina/releases/tag/v0.0.1
