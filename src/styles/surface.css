@@ -731,9 +731,10 @@
   font-weight: 600;
 }
 
+/* 第四列留给丢包，只有那一行真丢过才出现；空着的行第四列宽度为 0，排版不变。 */
 .instance-chart-tooltip-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 6px;
   color: var(--text-secondary);
@@ -743,6 +744,12 @@
 .instance-chart-tooltip-row strong {
   color: var(--text-primary);
   font-weight: 650;
+}
+
+.instance-chart-tooltip-loss {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 600;
 }
 
 .instance-chart-tooltip-dot {

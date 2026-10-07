@@ -8,7 +8,3 @@
 export function isValidPingLatency(v: number | null | undefined): v is number {
   return typeof v === "number" && Number.isFinite(v) && v >= 0;
 }
-
-export function isLostPingSample(v: number | null | undefined): boolean {
-  return typeof v === "number" && Number.isFinite(v) && v < 0;
-}

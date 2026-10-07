@@ -195,6 +195,11 @@ export interface PingSeriesRecord {
   time: number;
   /** 延迟毫秒；负值是「这个桶整个超时」。 */
   value: number;
+  /**
+   * 这个桶里丢掉的探测轮次占比（整数百分比）。hub 只在确实丢过轮次时才下发这个键，
+   * 缺键就是一次没丢 —— 0 与「没有这个键」在这里是同义的。
+   */
+  loss: number;
 }
 
 export interface PingSeriesTask {
@@ -250,6 +255,7 @@ export function pingSeriesFrom(
     task_id: row.task_id,
     time: row.ts,
     value: row.latency == null ? -1 : row.latency,
+    loss: row.loss ?? 0,
   }));
 
   const to = Math.floor(now / 1000);

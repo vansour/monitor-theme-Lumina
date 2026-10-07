@@ -261,11 +261,16 @@ test("a bucket where every probe timed out becomes a gap", () => {
     probes: { "1": "电信" },
     ping: [
       { task_id: 1, ts: 1000, latency: 40 },
-      { task_id: 1, ts: 1060, latency: null },
+      { task_id: 1, ts: 1060, latency: null, loss: 100 },
     ],
   });
   const series = pingSeriesFrom(res, 1, 60, 1_700_000_000_000);
   assert.deepEqual(series.records.map((r) => r.value), [40, -1], "null latency is the loss sentinel");
+  assert.deepEqual(
+    series.records.map((r) => r.loss),
+    [0, 100],
+    "a missing `loss` key means nothing was lost, which is what the hub omits it for",
+  );
 });
 
 console.log(`adapters: ${passed} tests passed`);

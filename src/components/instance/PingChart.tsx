@@ -24,7 +24,7 @@ import {
 } from "./chartData";
 import { latencyHeatColor, lossHeatColor } from "@/utils/metricTone";
 import { useResolvedAppearance } from "@/hooks/usePreferences";
-import { isLostPingSample, isValidPingLatency } from "@/utils/pingValues";
+import { isValidPingLatency } from "@/utils/pingValues";
 import type { PingSeriesRecord, PingSeriesTask } from "@/utils/adapters";
 import type { TimedMetricPoint } from "./chartData";
 
@@ -35,7 +35,8 @@ interface TooltipState {
   show: boolean;
   left: number;
   top: number;
-  rows: Array<{ label: string; value: string; color: string }>;
+  /** `loss` 是光标所在那个桶的丢包率，没丢过就是 0。 */
+  rows: Array<{ label: string; value: string; color: string; loss: number }>;
   time: string;
 }
 
@@ -211,6 +212,26 @@ export function PingChart({
     if (chart) chartRef.current = chart;
   }, [chart]);
 
+  /**
+   * 每个桶的丢包率，按探测分组、按桶的起点秒索引。只收真正丢过的桶 —— hub 只在
+   * 丢过时才下发这个键，绝大多数的桶都是干净的，不进表。光标落在某个桶上时拿它
+   * 给气泡补一列：部分丢包在延迟线上看不出来（中位数照样有值），只能从这儿读。
+   */
+  const bucketLoss = useMemo(() => {
+    const byTask = new Map<number, Map<number, number>>();
+    for (const record of data?.records ?? []) {
+      if (record.loss <= 0) continue;
+      const time = toChartSeconds(record.time);
+      let byTime = byTask.get(record.task_id);
+      if (!byTime) {
+        byTime = new Map();
+        byTask.set(record.task_id, byTime);
+      }
+      byTime.set(time, record.loss);
+    }
+    return byTask;
+  }, [data]);
+
   const yRange = useMemo<[number | null, number | null]>(() => {
     if (!chart) return [null, null];
     const values = tasks
@@ -313,6 +334,7 @@ export function PingChart({
                 label: taskLabels.get(task.id) ?? `任务 #${task.id}`,
                 value: value == null ? "—" : `${value.toFixed(1)} ms`,
                 color: taskColors.get(task.id) ?? colorForTask(taskIndex),
+                loss: bucketLoss.get(task.id)?.get(timestamp) ?? 0,
               };
             });
             const anchorY = typeof u.cursor.top === "number" ? u.cursor.top : bbox.height * 0.5;
@@ -322,7 +344,8 @@ export function PingChart({
               anchorX,
               anchorY,
               rowCount: rows.length,
-              estimatedWidth: 196,
+              // 有丢包的行多一列，估算宽度跟着放大，左右摆放才不至于贴边。
+              estimatedWidth: rows.some((row) => row.loss > 0) ? 236 : 196,
             });
             setTooltip({
               show: true,
@@ -335,7 +358,7 @@ export function PingChart({
         ],
       },
     };
-  }, [chart, connectNulls, h, hiddenTasks, isDark, taskColors, taskIndexById, taskLabels, tasks, visibleTasks, w, xRange, yRange]);
+  }, [bucketLoss, chart, connectNulls, h, hiddenTasks, isDark, taskColors, taskIndexById, taskLabels, tasks, visibleTasks, w, xRange, yRange]);
 
   const taskStats = useMemo(() => {
     const grouped = new Map<number, PingSeriesRecord[]>();
@@ -360,9 +383,9 @@ export function PingChart({
         : null;
       const min = positives.length ? Math.min(...positives) : null;
       const max = positives.length ? Math.max(...positives) : null;
+      // 丢包率用 hub 的窗口值（`task.loss`，Σ丢轮 / Σ总轮）：主题自己按「整桶全丢的
+      // 桶数」算会小得多 —— 一个桶里丢了一半轮次、另一半答上来，那个桶就不算数。
       const total = records.length;
-      const lost = records.filter((record) => isLostPingSample(record.value)).length;
-      const loss = total > 0 ? (lost / total) * 100 : task.loss;
       return {
         ...task,
         latest,
@@ -370,7 +393,6 @@ export function PingChart({
         min,
         max,
         total,
-        loss,
         color: taskColors.get(task.id) ?? colorForTask(index),
       };
     });
@@ -517,6 +539,10 @@ export function PingChart({
                     <span className="instance-chart-tooltip-dot" style={{ background: row.color }} />
                     <span>{row.label}</span>
                     <strong>{row.value}</strong>
+                    {/* 一次没丢的桶不占这一列，气泡看起来和原来一样。 */}
+                    {row.loss > 0 ? (
+                      <span className="instance-chart-tooltip-loss">{`丢包 ${row.loss}%`}</span>
+                    ) : null}
                   </div>
                 ))}
               </div>
