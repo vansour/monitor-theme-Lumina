@@ -68,7 +68,7 @@ export const NodeCard = memo(function NodeCard({
   const downRate = formatTrafficRate(node.netDown);
   const isOnline = node.online === true;
   const isOffline = node.online === false;
-  const offlineFor = isOffline ? formatOfflineDuration(node.updatedAt) : null;
+  const offlineFor = isOffline ? formatOfflineDuration(node.lastSeenAgo) : null;
 
   return (
     <article

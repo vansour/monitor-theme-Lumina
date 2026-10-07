@@ -41,11 +41,12 @@
 
 ### 站点图标
 
-favicon 不在上面那张表里，因为它要的是**文件**而不是一个值，而 hub 的设置表单只有文本、开关、下拉这几种字段。站长（浏览器里登录着后台，`/api/me` 的 `authed` 为真）打开右上角菜单会多出「站点图标」一栏：选一个 `.ico`，主题把它转成 data URL，写进 hub 的主题设置（`favicon` 键），所有访客下次加载即生效，不用重新部署。同一个键不在 `theme.json` 里声明 —— 声明成字符串会在后台渲染出一个装着几十 KB base64 的输入框。
+图标走 hub 自己的站点图标设置（后台「设置」页），主题这边不提供上传口：hub 直接回答 `/favicon.svg`、`/favicon.ico`、`/apple-touch-icon.png` 这些路径，站长在后台传过图标就全站生效，切换主题也不丢。
 
-- **上限 32 KiB**：hub 对写设置的请求体限制是 64 KiB，base64 还要膨胀 4/3。超限、或者文件头不是 ICO 的，都会当场给一行提示，不会写进去。
-- **只在菜单里给站长看**：写入走的是 hub 的管理员接口，匿名访客连这一栏都看不到；访客加载时只是读取。
-- 写入是「读回整份设置再整体写回」，不会动站长在后台改过的其它项。反过来，在后台主题设置页点「**恢复默认**」会连图标一起清掉 —— 那里会删除表单不认识的键。
+- `index.html` 里原样写着 `href="/favicon.svg"` 与 `href="/apple-touch-icon.png"`：hub 返回页面时会按当前图标的字节给这两个 URL 加上版本号，图标一换网址就变，浏览器与 iOS 书签不会抱着旧图标不放。
+- 主题自带一份 `dist/favicon.svg` 与 180×180、不透明底色的 `dist/apple-touch-icon.png`，站长没传图标时 hub 落到它们；传过之后这两个文件不再被访问。
+- iOS 的主屏幕图标只认 `apple-touch-icon`，别用 SVG；透明的地方会被 iOS 填成黑色，所以那份 PNG 必须是不透明的。
+- 反代或 WAF 按路径放行时，这三个路径要在白名单里，否则图标到不了浏览器与 iOS 主屏幕。
 
 ### 总览的口径
 
@@ -79,7 +80,7 @@ MONITOR_HUB=https://hub.example.com npm run dev
 
 构建产物在 `dist/`。提交前跑 `npm run build && npm run lint && npm test`。
 
-`npm test` 跑四个文件。`src/utils/adapters.ts` 盯的是那几个错了不显眼的地方 —— 流量比的是哪个口径、到期天数谁来算、一条坏上报怎么处置、探测顺序按什么定；`src/utils/favicon.ts` 盯站点图标 —— 什么字节才算 ICO、什么形状的值才算「设置过图标」、上限两边是不是同一个数；`src/utils/overview.ts` 盯总览的合计口径 —— 谁进分母、百分比是「先合计再相除」还是「各台取平均」、配额的分子分母是不是同一批机器；`src/utils/grouping.ts` 盯分组的顺序 —— 组的先后由谁定、空白组名算不算一组、在线数变了快照认不认得出来。没有测试框架，node 自己剥掉类型，失败时退出码非零。
+`npm test` 跑三个文件。`src/utils/adapters.ts` 盯的是那几个错了不显眼的地方 —— 流量比的是哪个口径、到期天数与离线时长谁在数、一条坏上报怎么处置、探测顺序按什么定；`src/utils/overview.ts` 盯总览的合计口径 —— 谁进分母、百分比是「先合计再相除」还是「各台取平均」、配额的分子分母是不是同一批机器；`src/utils/grouping.ts` 盯分组的顺序 —— 组的先后由谁定、空白组名算不算一组、在线数变了快照认不认得出来。没有测试框架，node 自己剥掉类型，失败时退出码非零。
 
 ## 打包
 
@@ -106,18 +107,26 @@ npm run build && npm run package     # 产出 theme.tar.gz
 
 `ci.yml` 在推 main 和开 PR 时跑 lint / test / build，并检查三个文件的版本号是否一致。
 
+## 实时数据
+
+节点数据只有一条来路：`/api/ws` 每 2 秒推一帧。浏览器有 `DecompressionStream` 时连的是 `/api/ws?gzip`，帧是 gzip 二进制；旧版 hub 不认这个参数、站长登录着时 hub 推的管理帧一律不压缩，两种都还是文本帧，主题两种都收。WebSocket 断开时 `/api/nodes` 每 5 秒顶班，直到流回来。
+
+- **10 秒没有一帧读得出来**就按断流处理。NAT 忘掉一条连接、手机把页面挂起，这类断开没有 close 事件，浏览器要等 TCP keepalive 放弃（Chrome 是 450 秒）才会发现 —— 不设这个看门狗，页面会一直停在旧数据上，右上角的同步异常提示也不会出现。
+- **页面隐藏时松手**：关掉推送、停掉轮询，挂起前发出的请求结果一律丢弃；回到前台立刻取一次 `/api/nodes` 并重连。手机挂起过的连接可能还显示已连接却再也收不到数据，留着一场空。
+
 ## 用到的 hub 接口
 
-全部同源，除站长上传站点图标的那两次读写外全部只读：
+全部同源、全部只读：
 
 | 接口 | 用途 |
 |---|---|
 | `GET /api/me` | 站名、登录状态、公开页开关 |
 | `GET /api/nodes` | 节点列表与实时指标（WebSocket 断开时的回退） |
-| `GET /api/ws` | 每 2 秒推送一帧完整节点快照 |
+| `GET /api/ws?gzip` | 每 2 秒推送一帧完整节点快照，`?gzip` 时是 gzip 二进制帧 |
 | `GET /api/nodes/{id}/metrics` | 历史指标与延迟记录 |
-| `GET /api/themes/lumina/config` | 站长改过的设置（站点图标也在其中） |
-| `PUT /api/themes/lumina/config` | 站长上传 / 移除站点图标，整份写回；hub 侧要管理员会话 |
+| `GET /api/themes/lumina/config` | 站长改过的设置 |
+
+站点图标不在这个表里：它由 hub 后台设置，主题只是把 `/favicon.svg` 与 `/apple-touch-icon.png` 写进 `index.html`，请求由 hub 回答。
 
 ## 与上游 Lumina 的差异
 

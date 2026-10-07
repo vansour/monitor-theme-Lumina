@@ -158,18 +158,6 @@
   color: var(--text-secondary);
 }
 
-/* 站点图标那一行的反馈与说明：状态、错误、字数上限共用一条。 */
-.floating-panel-note {
-  margin: 6px 8px 2px;
-  color: var(--text-tertiary);
-  font-size: 11px;
-  line-height: 1.45;
-}
-
-.floating-panel-note[data-error="true"] {
-  color: var(--status-error);
-}
-
 .floating-panel-divider {
   height: 1px;
   margin: 8px 6px;

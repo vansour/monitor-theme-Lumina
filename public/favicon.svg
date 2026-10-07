@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 站点没上传图标时的默认图标：深色圆角底 + 主题蓝的脉搏线。
+       站长在 hub 后台设置的站点图标会盖过这个文件。 -->
+  <rect width="64" height="64" rx="14" fill="#111113"/>
+  <path d="M8 32h11l6.5-15 9.5 30 7.5-22 4 7h9.5"
+        fill="none" stroke="#3b82f6" stroke-width="5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

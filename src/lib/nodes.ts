@@ -34,6 +34,26 @@ interface State {
 const TRAFFIC_TREND_SAMPLE_COUNT = 18;
 /** WebSocket 断开后回退轮询的间隔。 */
 const POLL_INTERVAL_MS = 5_000;
+/**
+ * 断流判定：hub 每 2 秒推一帧，这么久没有一帧**可读的**帧就当连接已经死了。
+ *
+ * NAT 忘掉一条连接、手机把页面挂起，都会让连接静默失效：没有 close 事件，
+ * 浏览器要等 TCP keepalive 放弃（Chrome 是 450 秒）才发现，页面在那之前一直
+ * 停在旧数据上。
+ */
+const SILENCE_TIMEOUT_MS = 10_000;
+
+/** 浏览器解不开压缩帧时不带这个参数：hub 忽略它，照发文本帧。 */
+const GZIP = typeof DecompressionStream === "function" ? "?gzip" : "";
+
+/**
+ * 一帧的文本。hub 开了 gzip 的帧是二进制消息，解开就是同一份 JSON；旧版 hub
+ * 不认 `?gzip`、站长登录着推的管理帧 hub 一律不压，两种都还是文本。
+ */
+function frameText(data: string | Blob): string | Promise<string> {
+  if (typeof data === "string") return data;
+  return new Response(data.stream().pipeThrough(new DecompressionStream("gzip"))).text();
+}
 
 const EMPTY_TRAFFIC_TREND_SAMPLE: TrafficTrendSample = { value: 0, level: 0.25, opacity: 0.52 };
 const EMPTY_TRAFFIC_TREND_SNAPSHOT = Array.from(
@@ -95,6 +115,7 @@ function sameLive(a: NodeDisplay, b: NodeDisplay): boolean {
   return (
     a.online === b.online &&
     a.updatedAt === b.updatedAt &&
+    a.lastSeenAgo === b.lastSeenAgo &&
     a.uptime === b.uptime &&
     a.cpuPct === b.cpuPct &&
     a.ramUsed === b.ramUsed &&
@@ -284,6 +305,13 @@ let started = false;
 let socket: WebSocket | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let silenceTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * 每「松一次手」递增。请求发出后 epoch 变了，它的结果就不再描述现在的页面 ——
+ * 页面隐藏期间挂起的请求正是如此，回来之后才落地，只会把旧数据画上去。
+ */
+let epoch = 0;
 
 function stopPolling() {
   if (pollTimer != null) {
@@ -292,10 +320,22 @@ function stopPolling() {
   }
 }
 
+function stopWatching() {
+  if (silenceTimer != null) {
+    clearTimeout(silenceTimer);
+    silenceTimer = null;
+  }
+}
+
 function refreshOnce() {
+  const requestEpoch = epoch;
   getNodes()
-    .then((data) => applySnapshot(data.nodes ?? []))
-    .catch(() => markFailure());
+    .then((data) => {
+      if (requestEpoch === epoch) applySnapshot(data.nodes ?? []);
+    })
+    .catch(() => {
+      if (requestEpoch === epoch) markFailure();
+    });
 }
 
 function connect() {
@@ -305,29 +345,48 @@ function connect() {
     reconnectTimer = null;
   }
 
-  const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/ws`;
+  const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/ws${GZIP}`;
+  let opened: WebSocket;
   try {
-    socket = new WebSocket(url);
+    opened = new WebSocket(url);
   } catch {
     startPolling();
     reconnectTimer = setTimeout(connect, POLL_INTERVAL_MS);
     return;
   }
+  socket = opened;
 
-  socket.onmessage = (event) => {
-    let payload: { nodes?: Node[] };
-    try {
-      payload = JSON.parse(event.data);
-    } catch {
-      return;
-    }
-    if (!Array.isArray(payload.nodes)) return;
-    applySnapshot(payload.nodes);
-    // 流回来了，轮询只是替它值班。
-    stopPolling();
+  /** 每一帧可读的帧重新计时；超时按断流处理，重取一次并重连。 */
+  const watch = () => {
+    stopWatching();
+    silenceTimer = setTimeout(() => {
+      silenceTimer = null;
+      markFailure();
+      resume();
+    }, SILENCE_TIMEOUT_MS);
   };
-  socket.onerror = () => socket?.close();
-  socket.onclose = () => {
+  watch();
+
+  // 解压是异步的，后到的帧可能先解完 —— 一帧接一帧地处理，顺序才与到达顺序一致。
+  let decoded: Promise<void> = Promise.resolve();
+  opened.onmessage = (event) => {
+    decoded = decoded
+      .then(async () => {
+        const payload = JSON.parse(await frameText(event.data)) as { nodes?: Node[] };
+        // 连接关闭或已被顶替之后才解完的帧，描述的已经不是现在的状态。
+        if (opened.readyState !== WebSocket.OPEN || socket !== opened) return;
+        if (!Array.isArray(payload.nodes)) return;
+        applySnapshot(payload.nodes);
+        // 流回来了，轮询只是替它值班。
+        stopPolling();
+        watch();
+      })
+      // 一封解不开的帧不该带走后面排队的帧，也不该重置断流计时。
+      .catch((error) => console.warn("实时帧已丢弃：", error));
+  };
+  opened.onerror = () => opened.close();
+  opened.onclose = () => {
+    stopWatching();
     // hub 重启、公开页被关掉、会话失效都会走到这里。轮询顶上，同时重连。
     markFailure();
     startPolling();
@@ -340,7 +399,36 @@ function startPolling() {
 }
 
 /**
- * 起连接。幂等，每个用到的 hook 都会调它。
+ * 松手：关掉推送、停掉轮询，在途请求的结果一并作废。
+ *
+ * 手机把切到后台的页面挂起时会悄悄断掉它的连接 —— 留一条看似开着的连接没有
+ * 意义，回来时它可能还显示已连接却再也收不到数据。
+ */
+function pause() {
+  epoch += 1;
+  stopWatching();
+  if (socket) {
+    // 这次断开是要的，不是意外：不排重连。
+    socket.onclose = null;
+    socket.close();
+    socket = null;
+  }
+  stopPolling();
+  if (reconnectTimer != null) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+}
+
+/** 回到前台：立刻取一次快照，再开一条新连接。 */
+function resume() {
+  pause();
+  refreshOnce();
+  connect();
+}
+
+/**
+ * 起连接、盯住页面的可见性。幂等，每个用到的 hook 都会调它。
  *
  * hub 的 WebSocket 是只推不收的：客户端发什么都不读，所以这里没有订阅消息，
  * 重连就只是重开一条连接。
@@ -348,9 +436,14 @@ function startPolling() {
 export function ensureStarted(): void {
   if (started) return;
   started = true;
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) pause();
+    else resume();
+  });
+  // 后台打开的页面连推送都不连：等真的切到前台再说。
+  if (document.hidden) return;
   // 先取一次快照，别让首屏等 WebSocket 握手。
-  refreshOnce();
-  connect();
+  resume();
 }
 
 export function subscribe(listener: Listener): () => void {

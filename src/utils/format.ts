@@ -83,15 +83,19 @@ export function formatUptimeDays(seconds: number): { value: string; unit: string
   return { value: Math.floor(minutes).toString(), unit: "分钟" };
 }
 
+/**
+ * 离线时长。输入是距最后一次上报的**秒数**（`last_seen_ago`，或适配层给旧版
+ * hub 算的兜底）—— 这里不碰浏览器时钟：访客时钟快八小时时，拿它减 `last_seen`
+ * 会把刚掉线的机器显示成离线八小时。
+ */
 export function formatOfflineDuration(
-  updatedAt: number | undefined | null,
+  secondsAgo: number | undefined | null,
 ): { value: string; unit: string; full: string } {
-  if (!updatedAt || !Number.isFinite(updatedAt) || updatedAt <= 0) {
+  if (secondsAgo == null || !Number.isFinite(secondsAgo) || secondsAgo < 0) {
     return { value: "未知", unit: "", full: "离线时长未知" };
   }
 
-  const diffMs = Math.max(0, Date.now() - updatedAt);
-  const minutes = Math.floor(diffMs / 60000);
+  const minutes = Math.floor(secondsAgo / 60);
 
   if (minutes < 1) {
     return { value: "刚刚", unit: "", full: "刚刚离线" };

@@ -48,6 +48,8 @@ export type Node = {
   /** 站长设的分组，空串是未分组。旧版 hub 没有这个键。 */
   group?: string;
   last_seen: number;
+  /** 距最后一次上报的秒数，hub 的时钟；从未上报是 null。旧版 hub 没有这个键。 */
+  last_seen_ago?: number | null;
   /** 离线、或已连接但还没上报过，都是 null。 */
   metrics: Metrics | null;
   os: string;
@@ -156,6 +158,8 @@ export interface NodeDisplay {
   /** true 在线；false 离线；null 已连接但还没上报过，界面上显示「状态同步中」。 */
   online: boolean | null;
   updatedAt: number;
+  /** 距最后一次上报的秒数，离线时长用它；从未上报（或旧版 hub 拿不到）是 null。 */
+  lastSeenAgo: number | null;
   uptime: number;
   cpuPct: number;
   ramUsed: number;

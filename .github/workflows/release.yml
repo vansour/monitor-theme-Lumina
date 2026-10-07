@@ -49,7 +49,8 @@ jobs:
       - name: 检查包内容
         run: |
           gzip -t theme.tar.gz
-          for f in theme.json preview.png dist/index.html; do
+          # 两个图标文件少了哪个都不会报错，只会静默退化成没有图标 —— 卡在这里。
+          for f in theme.json preview.png dist/index.html dist/favicon.svg dist/apple-touch-icon.png; do
             tar tzf theme.tar.gz | grep -qx "$f" || { echo "::error::包里没有 $f"; exit 1; }
           done
 

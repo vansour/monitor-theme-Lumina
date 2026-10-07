@@ -53,6 +53,7 @@ function display(over: Partial<NodeDisplay> = {}): NodeDisplay {
 
     online: true,
     updatedAt: 1_700_000_000_000,
+    lastSeenAgo: 0,
     uptime: 0,
     cpuPct: 0,
     ramUsed: 0,

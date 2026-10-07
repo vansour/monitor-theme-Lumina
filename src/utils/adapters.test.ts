@@ -3,7 +3,7 @@
  *
  *   npm test
  *
- * 盯的是几个错了不显眼的地方：流量比的是哪个口径、到期天数谁来算、
+ * 盯的是几个错了不显眼的地方：流量比的是哪个口径、到期天数与离线时长谁来算、
  * 一条坏上报怎么处置、探测顺序按什么定。
  */
 import assert from "node:assert/strict";
@@ -15,6 +15,7 @@ import {
   pingSeriesFrom,
   safeNodes,
   sampleStep,
+  secondsSinceSeen,
   toDisplay,
 } from "./adapters.ts";
 import type { MetricsResponse, Node } from "../types/monitor.ts";
@@ -142,6 +143,21 @@ test("expiry is counted on the hub's calendar", () => {
   assert.equal(expireDays(node({ expires_at: null }), noon), null);
   // A hub on UTC and a visitor on UTC+8 must agree on the day count.
   assert.equal(daysUntilUtc("2026-09-30", Date.UTC(2026, 8, 30, 23, 59)), 0);
+});
+
+test("offline time is counted on the hub's clock", () => {
+  const noon = Date.UTC(2026, 9, 7, 12, 0, 0);
+  // The hub said so: use it, and never consult the visitor's clock for it.
+  assert.equal(secondsSinceSeen(node({ last_seen_ago: 90, last_seen: 0 }), noon), 90);
+  assert.equal(secondsSinceSeen(node({ last_seen_ago: 90 }), noon + 8 * 3_600_000), 90);
+  // null is a real answer — never reported — not a reason to fall back.
+  assert.equal(secondsSinceSeen(node({ last_seen_ago: null, last_seen: 1_700_000_000 }), noon), null);
+  // The key missing means an older hub; then, and only then, count locally.
+  assert.equal(secondsSinceSeen(node({ last_seen: noon / 1000 - 300 }), noon), 300);
+  // A browser clock behind the hub's must not produce a negative duration.
+  assert.equal(secondsSinceSeen(node({ last_seen: noon / 1000 + 600 }), noon), 0);
+  assert.equal(secondsSinceSeen(node({ last_seen: 0 }), noon), null, "never seen is not `just now`");
+  assert.equal(toDisplay(node({ last_seen_ago: 90 })).lastSeenAgo, 90);
 });
 
 test("connected-but-not-yet-reporting is its own state", () => {

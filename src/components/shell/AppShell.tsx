@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useMe } from "@/hooks/useMe";
-import { useSiteFavicon } from "@/hooks/useSiteFavicon";
 import { FloatingControls } from "./FloatingControls";
 
 /**
@@ -22,7 +21,6 @@ export function AppShell() {
   const { data: me } = useMe();
   const { pathname } = useLocation();
   useClosedPageRedirect();
-  useSiteFavicon();
 
   // 站名用 hub 的，没拿到之前不写死。详情页会在它之后覆盖成「节点名 · 站名」，
   // 所以这里回到首页时也要重设一次，否则标题会留着上一台机器的名字。

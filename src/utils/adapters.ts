@@ -96,6 +96,20 @@ export function expireDays(node: Node, now = Date.now()): number | null {
 }
 
 /**
+ * 距最后一次上报的秒数，离线时长用它。
+ *
+ * hub 给了 `last_seen_ago` 就用它 —— 它按 hub 的时钟算，和 `expires_in` 同一个
+ * 理由：拿 `last_seen` 减浏览器时钟，访客时钟快八小时时会把刚掉线的机器显示成
+ * 离线八小时。`null` 是「从未上报」这个有效答案；旧版 hub 不认识这个键，
+ * 那时才退回用 `last_seen` 减浏览器时钟。
+ */
+export function secondsSinceSeen(node: Node, now = Date.now()): number | null {
+  if ("last_seen_ago" in node) return node.last_seen_ago ?? null;
+  const seen = num(node.last_seen);
+  return seen > 0 ? Math.max(0, now / 1000 - seen) : null;
+}
+
+/**
  * hub 的三种节点状态各对应一种界面：离线、已连接但还没上报（`online: true` 而
  * `metrics: null`，最容易漏掉的一种）、以及正常在线。中间那种映射成 null，
  * 卡片显示「状态同步中」而不是谎报 0%。
@@ -138,6 +152,7 @@ export function toDisplay(node: Node): NodeDisplay {
     online: onlineState(node),
     // `last_seen` 是秒，界面统一用毫秒。
     updatedAt: num(node.last_seen) * 1000,
+    lastSeenAgo: secondsSinceSeen(node),
     uptime: num(m?.uptime),
     cpuPct: num(m?.cpu),
     ramUsed: num(m?.mem_used),

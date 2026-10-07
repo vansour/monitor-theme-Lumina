@@ -54,7 +54,7 @@ export function InstanceDetails({ id }: { id: string }) {
   const isOnline = node.online === true;
   const isOffline = node.online === false;
   const uptime = formatUptimeDays(node.uptime);
-  const offlineFor = isOffline ? formatOfflineDuration(node.updatedAt) : null;
+  const offlineFor = isOffline ? formatOfflineDuration(node.lastSeenAgo) : null;
   const expire = formatExpireDays(node.expiresIn);
   // 进度条比的是**本计费周期**的用量，不是累计流量 —— hub 给的 traffic_limit 是
   // 按 traffic_mode 计的每周期上限，拿一年的累计量去除它，一台开了半年的机器
