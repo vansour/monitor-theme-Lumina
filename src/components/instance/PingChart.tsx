@@ -50,17 +50,6 @@ function colorForTask(index: number) {
   return colors[index % colors.length];
 }
 
-function percentile(values: number[], ratio: number) {
-  if (values.length === 0) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  const index = (sorted.length - 1) * ratio;
-  const lower = Math.floor(index);
-  const upper = Math.ceil(index);
-  if (lower === upper) return sorted[lower];
-  const weight = index - lower;
-  return sorted[lower] + (sorted[upper] - sorted[lower]) * weight;
-}
-
 /** 要多少点：1440 是 hub 的上限，也是能拿到的最细栅格。 */
 const PING_POINTS = 1440;
 
@@ -232,14 +221,11 @@ export function PingChart({
       )
       .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0);
     if (values.length === 0) return [0, 100];
-    const min = Math.min(...values);
+    // 纵轴从 0 起：截掉基线会把几毫秒的抖动画成几倍起伏。顶部按峰值留一成余量，
+    // 平直的一条线也靠 5 ms 的下限撑开。
     const max = Math.max(...values);
-    if (min === max) {
-      const pad = Math.max(5, min * 0.1);
-      return [Math.max(0, min - pad), max + pad];
-    }
-    const pad = Math.max(5, (max - min) * 0.12);
-    return [Math.max(0, min - pad), max + pad];
+    const pad = Math.max(5, max * 0.12);
+    return [0, max + pad];
   }, [chart, tasks, visibleTaskIds]);
 
   const xRange = useMemo<[number, number] | null>(() => {
@@ -257,7 +243,8 @@ export function PingChart({
       width: w,
       height: h,
       padding: [10, 18, 8, 2],
-      cursor: { drag: { x: true, y: false } },
+      // 关掉 uPlot 默认的拖拽框选：不带 `drag` 时它默认开启，会连双击还原一起带进来。
+      cursor: { drag: { x: false, y: false } },
       legend: { show: false },
       scales: {
         x: xScale,
@@ -373,9 +360,6 @@ export function PingChart({
         : null;
       const min = positives.length ? Math.min(...positives) : null;
       const max = positives.length ? Math.max(...positives) : null;
-      const p50 = percentile(positives, 0.5);
-      const p99 = percentile(positives, 0.99);
-      const volatility = p50 && p50 > 0 && p99 ? p99 / p50 : null;
       const total = records.length;
       const lost = records.filter((record) => isLostPingSample(record.value)).length;
       const loss = total > 0 ? (lost / total) * 100 : task.loss;
@@ -385,11 +369,7 @@ export function PingChart({
         avg,
         min,
         max,
-        p50,
-        p99,
-        volatility,
         total,
-        lost,
         loss,
         color: taskColors.get(task.id) ?? colorForTask(index),
       };
@@ -446,10 +426,6 @@ export function PingChart({
           <span>
             覆盖 <strong>{coverageSummary}</strong>
           </span>
-          <span>
-            采样 <strong>{`${data.records.length} 个点`}</strong>
-          </span>
-          <span className="instance-chart-hint">框选缩放 · 双击还原</span>
         </div>
         <div className="instance-ping-toolbar-actions">
           <button
@@ -520,14 +496,6 @@ export function PingChart({
               <div className="instance-ping-task-stats">
                 <span>均值 {task.avg != null ? `${task.avg.toFixed(1)} ms` : "—"}</span>
                 <span style={{ color: lossHeatColor(task.loss) }}>丢包 {task.loss.toFixed(1)}%</span>
-                <span>p99 {task.p99 != null ? `${task.p99.toFixed(0)} ms` : "—"}</span>
-                <span>抖动 {task.volatility != null ? task.volatility.toFixed(2) : "—"}</span>
-              </div>
-              <div className="instance-ping-task-meta">
-                <span>min {task.min != null ? `${task.min.toFixed(0)} ms` : "—"}</span>
-                <span>max {task.max != null ? `${task.max.toFixed(0)} ms` : "—"}</span>
-                <span>样本 {task.total ?? 0}</span>
-                <span>{task.interval}s</span>
               </div>
             </button>
           );

@@ -148,39 +148,14 @@ function formatNetworkAxisValue(value: number) {
 }
 
 /**
- * 数值几乎恒定时 uPlot 会把噪声放大到小数点后好几位，
- * 这里给每类指标一个最小跨度，读数才有意义。
+ * 纵轴一律从 0 起：截掉基线会把「几个百分点」画成「翻倍」。顶部取峰值再留一成半余量；
+ * 数值几乎恒定或全为 0 时由 `minTop` 兜底撑开，曲线才不会退化成贴边的一条直线。
+ * `cap` 留给百分比类指标 —— 它们不可能超过 100。
  */
-function percentRange(minSpan: number): uPlot.Scale.Range {
-  return (_self, dataMin, dataMax) => {
-    let low = Math.max(0, Math.min(dataMin ?? 0, dataMax ?? 0));
-    let high = Math.min(100, Math.max(dataMax ?? 0, low));
-    const span = high - low;
-    if (span < minSpan) {
-      const center = (low + high) / 2;
-      low = center - minSpan / 2;
-      high = center + minSpan / 2;
-      if (low < 0) {
-        high -= low;
-        low = 0;
-      }
-      if (high > 100) {
-        low = Math.max(0, low - (high - 100));
-        high = 100;
-      }
-    } else {
-      const pad = span * 0.08;
-      low = Math.max(0, low - pad);
-      high = Math.min(100, high + pad);
-    }
-    return [low, high];
-  };
-}
-
-function fromZeroRange(minTop: number): uPlot.Scale.Range {
+function fromZeroRange(minTop: number, cap?: number): uPlot.Scale.Range {
   return (_self, _dataMin, dataMax) => {
     const top = Math.max(minTop, (dataMax ?? 0) * 1.15);
-    return [0, top];
+    return [0, cap == null ? top : Math.min(cap, top)];
   };
 }
 
@@ -210,14 +185,15 @@ function buildChartOptions({
   const isDark = resolvedAppearance === "dark";
   const grid = isDark ? "rgba(255,255,255,0.065)" : "rgba(0,0,0,0.08)";
   const text = isDark ? "#a5a5aa" : "#52525b";
-  const yRange = axisKind === "percent" ? percentRange(0.5) : fromZeroRange(1);
+  const yRange = axisKind === "percent" ? fromZeroRange(0.5, 100) : fromZeroRange(1);
 
   return {
     width,
     height,
     padding: [8, 16, 8, 2],
     cursor: {
-      drag: { x: true, y: false },
+      // 关掉 uPlot 默认的拖拽框选：不带 `drag` 时它默认开启，会连双击还原一起带进来。
+      drag: { x: false, y: false },
       y: false,
       sync: { key: syncKey, scales: ["x", null] },
     },
@@ -542,13 +518,6 @@ export function LoadChart({
   }, [latest]);
 
   const rangeSummary = formatRangeSummary(hours);
-  const sourceCount = data?.metrics.length ?? 0;
-  const wasDownsampled = !isRealtime && sourceCount > getHistoryRenderLimit(hours);
-  const sampleSummary = isRealtime
-    ? `${points.length} 个点`
-    : wasDownsampled
-      ? `${points.length} / ${sourceCount} 个点`
-      : `${points.length} 个点`;
   const coverageSummary = points.length
     ? formatChartCoverageRange(points[0]!.time, points[points.length - 1]!.time)
     : "—";
@@ -576,10 +545,6 @@ export function LoadChart({
           <span>
             覆盖 <strong>{coverageSummary}</strong>
           </span>
-          <span>
-            采样 <strong>{sampleSummary}</strong>
-          </span>
-          <span className="instance-chart-hint">框选缩放 · 双击还原</span>
         </div>
         <button
           type="button"

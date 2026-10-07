@@ -120,6 +120,8 @@ export type MetricsResponse = {
   probes: Record<string, string>;
   /** 探测 id → 整窗丢包百分比，没丢包的不出现。 */
   loss: Record<string, number>;
+  /** 每个点覆盖的秒数。旧版 hub 没有这个字段，那时只能按窗口自己推。 */
+  step?: number;
 };
 
 // ---- 展示模型 ----

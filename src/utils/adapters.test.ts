@@ -183,14 +183,16 @@ test("directions and units survive the mapping", () => {
   assert.equal(d.nodeId, 1);
 });
 
-test("the sampling grid matches the hub's own formula", () => {
-  // hub: 60 * max(ceil(hours*60 / clamp(points,60,1440)), 1)
+test("the fallback grid matches the pre-`step` hub formula", () => {
+  // hub's old `sample_step`: 60 * max(ceil(hours*60 / clamp(points,60,1440)), 1).
+  // Only consulted when a response carries no `step` — and such a hub predates
+  // the hourly tier as well, so the minute-only formula is the right one there.
   assert.equal(sampleStep(1, 1440), 60, "an hour bottoms out at the one-minute grid");
   assert.equal(sampleStep(6, 1440), 60);
   assert.equal(sampleStep(24, 1440), 60);
   assert.equal(sampleStep(168, 1440), 420);
   assert.equal(sampleStep(720, 1440), 1800);
-  assert.equal(sampleStep(168, 60), 10080 > 0 ? 60 * Math.ceil((168 * 60) / 60) : 0, "few points means a coarse grid");
+  assert.equal(sampleStep(168, 60), 10080, "few points means a coarse grid");
 });
 
 const pingResponse = (over: Partial<MetricsResponse> = {}): MetricsResponse => ({
@@ -199,6 +201,21 @@ const pingResponse = (over: Partial<MetricsResponse> = {}): MetricsResponse => (
   probes: {},
   loss: {},
   ...over,
+});
+
+test("the grid comes from the response when the hub reports one", () => {
+  // The bucket rows were actually built on beats any formula: the two disagree
+  // the moment a window crosses into the hub's hourly tier.
+  const NOW_MS = 1_700_000_000_000;
+  const base = { probes: { "1": "电信" }, ping: [{ task_id: 1, ts: 1000, latency: 40 }] };
+  const reported = pingSeriesFrom(pingResponse({ ...base, step: 900 }), 1, 1440, NOW_MS);
+  assert.equal(reported.tasks[0]!.interval, 900, "the response wins");
+  assert.deepEqual(reported.sampleIntervals, { "1": 900 });
+
+  // A response without `step` comes from a hub that predates the hourly tier,
+  // so the minute formula is the one that matches it — even at 30 days.
+  const older = pingSeriesFrom(pingResponse(base), 720, 1440, NOW_MS);
+  assert.equal(older.tasks[0]!.interval, 1800, "no `step` means the legacy formula");
 });
 
 test("probe order comes from the rows, not from object key order", () => {

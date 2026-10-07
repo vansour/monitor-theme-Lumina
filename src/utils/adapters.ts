@@ -178,8 +178,11 @@ export function toDisplay(node: Node): NodeDisplay {
 }
 
 /**
- * `60 * ceil(hours*60/budget)`，budget 被 hub 夹在 60..1440 —— 与 hub 的
- * `sample_step` 同式。主题据此知道自己的曲线画在什么栅格上。
+ * 旧版 hub 的采样栅格：`60 * max(ceil(hours*60/budget), 1)`，budget 夹在 60..1440。
+ * 只用来给不带 `step` 的响应兜底（见 `pingSeriesFrom`）—— 那以后的 hub 都在响应里
+ * 回报栅格，而且窗口超过七天改读整点的小时表，单位从分钟换成小时；照这个式子推
+ * 会把 30 天的栅格算成实际的一半，断档判定于是把每两个真实点之间都当成一个洞，
+ * 整条曲线被切成画不出来的孤立点。
  */
 export function sampleStep(hours: number, points: number): number {
   const budget = Math.min(1440, Math.max(60, points));
@@ -228,7 +231,9 @@ export function pingSeriesFrom(
   points: number,
   now = Date.now(),
 ): PingSeries {
-  const step = sampleStep(hours, points);
+  // 栅格以响应里的 `step` 为准：它就是分桶用的那个数，窗口跨进小时表（>7 天）时
+  // 单位换了挡，按窗口自己推会算错。旧版 hub 没有这个字段，才退回按公式推。
+  const step = res.step != null && res.step > 0 ? res.step : sampleStep(hours, points);
   const orderedIds: number[] =
     res.ping.length > 0
       ? [...new Set(res.ping.map((row) => row.task_id))]

@@ -1,7 +1,7 @@
 {
   "name": "monitor-theme-lumina",
   "private": true,
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "description": "monitor 的状态页主题，移植自 Komari 的 Lumina",
   "scripts": {

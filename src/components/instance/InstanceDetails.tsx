@@ -74,7 +74,9 @@ export function InstanceDetails({ id }: { id: string }) {
   const subtitle =
     buildSubtitle([node.os, node.arch, node.virtualization]) || "暂无系统信息";
   const priceLabel = formatPriceLabel(node.price, node.billing_cycle, node.currency);
-  const hasServiceInfo = Boolean(node.group || node.region || node.expiresIn != null || priceLabel);
+  // 分组不算在内：它只出现在头部那个 tag 上，卡片里不再重复，只有分组没别的
+  // 服务信息时这张卡会是空壳。
+  const hasServiceInfo = Boolean(node.region || node.expiresIn != null || priceLabel);
 
   return (
     <section className="instance-panel">
@@ -108,16 +110,20 @@ export function InstanceDetails({ id }: { id: string }) {
       <div className="instance-info-groups">
         <div className="instance-info-group">
           <div className="instance-info-group-title">系统</div>
+          {/* 操作系统、架构、虚拟化不在这里重复一遍：头部副标题就是这三个
+              （见上面的 `subtitle`），一屏里写两遍只是把这张表撑高。 */}
           <InfoRow
             label="CPU"
             value={`${node.cpu_name || "—"}${node.cpu_cores > 0 ? ` (x${node.cpu_cores})` : ""}`}
           />
-          <InfoRow label="操作系统" value={node.os || "—"} />
           {node.kernel_version ? (
             <InfoRow label="内核" value={node.kernel_version} />
           ) : null}
-          <InfoRow label="架构" value={node.arch || "—"} />
-          <InfoRow label="虚拟化" value={node.virtualization || "—"} />
+          <InfoRow
+            label="运行时长"
+            value={uptime.unit ? `${uptime.value} ${uptime.unit}` : uptime.value}
+          />
+          <InfoRow label="进程" value={node.process > 0 ? `${node.process}` : "—"} />
         </div>
 
         <div className="instance-info-group">
@@ -135,11 +141,6 @@ export function InstanceDetails({ id }: { id: string }) {
           <InfoRow
             label="负载"
             value={`${node.load1.toFixed(2)} | ${node.load5.toFixed(2)} | ${node.load15.toFixed(2)}`}
-          />
-          <InfoRow label="进程" value={node.process > 0 ? `${node.process}` : "—"} />
-          <InfoRow
-            label="运行时长"
-            value={uptime.unit ? `${uptime.value} ${uptime.unit}` : uptime.value}
           />
         </div>
 
@@ -179,7 +180,7 @@ export function InstanceDetails({ id }: { id: string }) {
         {hasServiceInfo && (
           <div className="instance-info-group">
             <div className="instance-info-group-title">服务</div>
-            {node.group ? <InfoRow label="分组" value={node.group} /> : null}
+            {/* 分组不在卡片里重复：头部右侧已经有一个同名的 tag。 */}
             {node.region ? <InfoRow label="地区" value={node.region} /> : null}
             {node.expiresIn != null ? (
               <InfoRow

@@ -266,7 +266,12 @@ const GRID_CHART_FALLBACK_WIDTH = 320;
 const WIDE_CHART_FALLBACK_WIDTH = 720;
 
 function resolveChartHeight(mode: "grid" | "wide", width: number) {
-  if (mode === "grid") return width < 260 ? 136 : 150;
+  // 负载图排成 2×2 后每张卡能到 700px 上下，高度得跟着分档，不然曲线被拉成细长条。
+  if (mode === "grid") {
+    if (width < 260) return 136;
+    if (width < 520) return 150;
+    return 200;
+  }
   if (width < 560) return 260;
   if (width < 900) return 300;
   return 340;

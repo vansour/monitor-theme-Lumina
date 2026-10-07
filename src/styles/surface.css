@@ -326,25 +326,38 @@
   gap: 14px;
 }
 
+/* 竖向 flex 是为了让行分掉卡片的多余高度：四张卡等高（栅格拉伸）而行数不同，
+   不这么做就只有最长的那张是满的，其余三张各自在底部空一块，底边看着不齐。 */
 .instance-info-group {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   background: color-mix(in srgb, var(--surface-elev) 92%, transparent);
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 
 .instance-info-group-title {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: var(--text-primary);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
+/*
+ * 标签左、值右，一条一行 —— 两行一条的排法会让这张表比下面的图表还高。
+ * `align-items: center` 而不是 `baseline`：行被拉高时文字要垂直居中，不然会贴在行顶。
+ */
 .instance-info-item {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   min-width: 0;
-  padding: 9px 0;
+  padding: 5px 0;
   border-bottom: 1px solid var(--hairline);
 }
 
@@ -352,9 +365,13 @@
   border-bottom: 0;
 }
 
-.instance-info-label {
+/* 总流量那条竖着放：值下面还有进度条与本周期用量。 */
+.instance-info-item.is-stack {
   display: block;
-  margin-bottom: 4px;
+}
+
+.instance-info-label {
+  flex: 0 0 auto;
   color: var(--text-secondary);
   font-size: 11px;
   font-weight: 600;
@@ -362,15 +379,23 @@
 }
 
 .instance-info-value {
+  min-width: 0;
   color: var(--text-primary);
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.45;
+  text-align: right;
   word-break: break-word;
+}
+
+.instance-info-item.is-stack .instance-info-label {
+  display: block;
+  margin-bottom: 4px;
 }
 
 .instance-info-item.is-stack .instance-info-value {
   margin-bottom: 7px;
+  text-align: left;
 }
 
 .instance-info-traffic {
@@ -551,10 +576,13 @@
   font-weight: 700;
 }
 
-/* 列数交给栅格自适应：JS 侧按容器实测宽度画图，两边不会再对不上。 */
+/*
+ * 负载四图固定 2×2：auto-fit 在宽屏上会排成一行四张，横向拉得太长反而难读。
+ * 列数写死也不会有对不上的问题 —— 画布宽度由 JS 按容器实测宽度给（useChartSize）。
+ */
 .instance-chart-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -654,11 +682,6 @@
   width: 6px;
   height: 6px;
   border-radius: 999px;
-}
-
-.instance-chart-hint {
-  color: var(--text-tertiary);
-  font-weight: 500;
 }
 
 .instance-chart-card .instance-panel-subhead svg {
@@ -788,19 +811,13 @@
   letter-spacing: -0.02em;
 }
 
-.instance-ping-task-stats,
-.instance-ping-task-meta {
+.instance-ping-task-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px 10px;
   color: var(--text-secondary);
   font-size: 11px;
   font-weight: 550;
-}
-
-.instance-ping-task-meta {
-  color: var(--text-tertiary);
-  font-size: 10px;
 }
 
 .instance-ping-task[data-visible="false"] {
