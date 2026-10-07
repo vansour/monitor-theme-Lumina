@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ArrowDown, ArrowDownUp, ArrowUp, Cpu, Globe, HardDrive, MemoryStick, Server } from "lucide-react";
+import { ArrowDown, ArrowDownUp, ArrowUp, Cpu, Globe, Server } from "lucide-react";
 import { useNodesOverview } from "@/hooks/useNode";
 import { useThemeConfig } from "@/hooks/useThemeConfig";
 import { formatBytes, formatTrafficRate } from "@/utils/format";
@@ -10,11 +10,12 @@ function splitBytes(text: string): [string, string] {
   return index < 0 ? [text, ""] : [text.slice(0, index), text.slice(index + 1)];
 }
 
-/** 空小注也占一行，格子高度才不会参差（与 MetricBar 的 detailText 用同一招）。 */
-const PERCENT_EMPTY = " ";
-
 /**
  * 首页网格上方的站点总览：节点状态、实时带宽、资源占用、本月流量。
+ *
+ * 四格而不是六格：CPU / 内存 / 磁盘 是同一类数，合成一张「资源」卡后，任何宽度下
+ * 都排得满 —— 六格在 768–1279 之间是 3 列两行，三个百分比会被拆到两行去，而且每格
+ * 四五百像素宽、内容只占左边一角。
  *
  * 数据全部来自 `useNodesOverview()` —— 它读的是每 2 秒推来的那一帧节点快照，
  * 这一块本身不发任何请求。口径（谁进分母、分子分母是不是同一批机器）写在
@@ -42,14 +43,14 @@ export function HomeOverview() {
     overview.pending > 0 ? `${overview.pending} 台同步中` : "",
   ].filter(Boolean);
   const nodeNote = nodeNoteParts.length > 0 ? nodeNoteParts.join(" · ") : "全部在线";
-  // 小注窄屏会省略号截断，所以每一格都把自己的全文挂在 title 上。
-  const ramNote =
+  // 小注窄屏会折行或省略号截断，所以每一格都把自己的全文挂在 title 上。
+  const ramDetail =
     overview.ramPct == null
-      ? PERCENT_EMPTY
+      ? undefined
       : `${formatBytes(overview.ramUsed)} / ${formatBytes(overview.ramTotal)}`;
-  const diskNote =
+  const diskDetail =
     overview.diskPct == null
-      ? PERCENT_EMPTY
+      ? undefined
       : `${formatBytes(overview.diskUsed)} / ${formatBytes(overview.diskTotal)}`;
   const trafficNote = hasQuota ? `配额 ${formatBytes(overview.quotaLimit)} · 已用 ${quotaPct}%` : "未设配额";
   const trafficTitle = hasQuota
@@ -103,31 +104,34 @@ export function HomeOverview() {
         noteTitle={`在线节点的实时速率合计：上行 ${up.value} ${up.unit}`}
       />
 
-      <OverviewTile
-        icon={<Cpu size={13} strokeWidth={2} />}
-        label="CPU"
-        value={percentValue(overview.cpuPct)}
-        valueTitle="在线节点的平均 CPU 占用"
-        note={overview.cpuPct == null ? PERCENT_EMPTY : "在线均值"}
-      />
-
-      <OverviewTile
-        icon={<MemoryStick size={13} strokeWidth={2} />}
-        label="内存"
-        value={percentValue(overview.ramPct)}
-        valueTitle="在线节点已用内存 ÷ 在线节点内存总量"
-        note={ramNote}
-        noteTitle={overview.ramPct == null ? undefined : ramNote}
-      />
-
-      <OverviewTile
-        icon={<HardDrive size={13} strokeWidth={2} />}
-        label="磁盘"
-        value={percentValue(overview.diskPct)}
-        valueTitle="在线节点已用磁盘 ÷ 在线节点磁盘总量"
-        note={diskNote}
-        noteTitle={overview.diskPct == null ? undefined : diskNote}
-      />
+      <div className="home-overview-item">
+        <div className="home-overview-label">
+          <Cpu size={13} strokeWidth={2} />
+          <span>资源</span>
+        </div>
+        <div className="home-overview-body">
+          <ResourceRow
+            label="CPU"
+            pct={overview.cpuPct}
+            color="var(--progress-cpu)"
+            title="在线节点的平均 CPU 占用"
+          />
+          <ResourceRow
+            label="内存"
+            pct={overview.ramPct}
+            color="var(--progress-memory)"
+            detail={ramDetail}
+            title="在线节点已用内存 ÷ 在线节点内存总量"
+          />
+          <ResourceRow
+            label="磁盘"
+            pct={overview.diskPct}
+            color="var(--progress-disk)"
+            detail={diskDetail}
+            title="在线节点已用磁盘 ÷ 在线节点磁盘总量"
+          />
+        </div>
+      </div>
 
       <OverviewTile
         icon={<Globe size={13} strokeWidth={2} />}
@@ -157,6 +161,36 @@ function percentValue(pct: number | null) {
   );
 }
 
+/** 「资源」格里的一行：名称、进度条、百分比，右边再挂一行明细（窄屏让位给前三个）。 */
+function ResourceRow({
+  label,
+  pct,
+  color,
+  detail,
+  title,
+}: {
+  label: string;
+  pct: number | null;
+  color: string;
+  detail?: string;
+  title: string;
+}) {
+  const width = pct == null ? 0 : Math.min(100, Math.max(0, pct));
+  return (
+    <div className="home-overview-row home-overview-metric-row" title={title}>
+      <span className="home-overview-metric-label">{label}</span>
+      <span className="home-overview-bar" aria-hidden>
+        <span
+          className="home-overview-bar-fill"
+          style={{ width: `${width}%`, background: color }}
+        />
+      </span>
+      <span className="home-overview-metric-value">{percentValue(pct)}</span>
+      {detail ? <span className="home-overview-detail">{detail}</span> : null}
+    </div>
+  );
+}
+
 function OverviewTile({
   icon,
   label,
@@ -180,16 +214,20 @@ function OverviewTile({
         {icon}
         <span>{label}</span>
       </div>
-      <span className="home-overview-value" title={valueTitle}>
-        {value}
-      </span>
-      <span
-        className="home-overview-note"
-        data-alert={noteAlert ? "true" : undefined}
-        title={noteTitle}
-      >
-        {note}
-      </span>
+      <div className="home-overview-body">
+        <div className="home-overview-row">
+          <span className="home-overview-value" title={valueTitle}>
+            {value}
+          </span>
+          <span
+            className="home-overview-note"
+            data-alert={noteAlert ? "true" : undefined}
+            title={noteTitle}
+          >
+            {note}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

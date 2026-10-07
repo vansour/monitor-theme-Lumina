@@ -874,9 +874,9 @@
   border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
   border-radius: 18px;
   content-visibility: auto;
-  /* 卡片实测高度（桌面栅格 401px），用于屏幕外卡片的占位；改了卡片结构要同步
+  /* 卡片实测高度（桌面栅格 358px），用于屏幕外卡片的占位；改了卡片结构要同步
      NodeCard 骨架的 minHeight。 */
-  contain-intrinsic-size: 401px;
+  contain-intrinsic-size: 358px;
   box-shadow: var(--shadow-card);
   overflow: hidden;
   transition:
@@ -1018,6 +1018,20 @@
   letter-spacing: 0.01em;
 }
 
+/* 到期 / 在线：紧跟在副标题下面，颜色由各自的行内样式给。 */
+.server-card-subtitle-meta {
+  margin: 2px 0 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .server-card-stack {
   display: flex;
   flex-direction: column;
@@ -1081,13 +1095,12 @@
 .traffic-stat {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
 }
 
 .traffic-stat-head,
-.traffic-stat-foot,
-.server-card-meta {
+.traffic-stat-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1095,8 +1108,7 @@
   min-width: 0;
 }
 
-.traffic-stat-label,
-.server-card-meta-label {
+.traffic-stat-label {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -1120,21 +1132,21 @@
   min-width: 0;
 }
 
-.traffic-dot-strip {
+.traffic-trend-strip {
   display: block;
   flex: 1 1 auto;
   width: 100%;
   min-width: 0;
-  height: 10px;
+  height: 8px;
 }
 
 .traffic-stat-live {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex: 0 0 auto;
   color: var(--text-tertiary);
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -1155,8 +1167,7 @@
   opacity: 0.6;
 }
 
-.traffic-stat-unit,
-.server-card-meta-unit {
+.traffic-stat-unit {
   margin-left: 2px;
   color: var(--text-tertiary);
   font-size: 11px;
@@ -1173,27 +1184,6 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-}
-
-.server-card-meta-value {
-  flex: 0 0 auto;
-  font-size: 16px;
-  font-weight: 640;
-  letter-spacing: -0.03em;
-}
-
-.server-card-footer {
-  padding-top: 12px;
-  border-top: 1px solid var(--hairline);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.server-card-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
 }
 
 /* Offline mask */
@@ -1246,7 +1236,8 @@
 /* ---- 首页总览 ----
    卡片列表上方的一行小格子：节点状态、实时带宽、资源占用、本月流量。
    数据全来自已有的那一帧节点快照，这一块本身不发请求。
-   列数按 2 / 3 / 6 三档走，六个格子在任何宽度下都排满，不留落单的一格。 */
+   四格：窄屏两列，够宽了排成一行四格 —— 六格那会儿 768–1279 之间是 3 列两行，
+   三个百分比会被拆到两行，每格还空着右边一大块。 */
 
 .home-overview {
   display: grid;
@@ -1254,22 +1245,16 @@
   gap: 10px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .home-overview {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1280px) {
-  .home-overview {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 .home-overview-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
   overflow: hidden;
   padding: 11px 13px;
@@ -1288,6 +1273,28 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
+}
+
+/* 内容吃满卡片剩下的高度：四格等高而行数不同（「资源」那格三行），
+   不这么做就只有它是满的，其余三格的数字挤在顶上、底下空一块。 */
+.home-overview-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* 内容贴着标签排（`flex-start` 而不是居中）：四格里只有「资源」是三行、它决定了
+   整条的高度，另外三格的数字要是一行居中，就和「资源」的第一行对不上了。 */
+.home-overview-row {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  justify-content: space-between;
+  gap: 6px 8px;
+  min-width: 0;
 }
 
 .home-overview-value {
@@ -1310,6 +1317,11 @@
   margin-right: 4px;
 }
 
+.home-overview-note .home-overview-direction {
+  margin-right: 3px;
+  vertical-align: -1px;
+}
+
 .home-overview-unit {
   margin-left: 2px;
   color: var(--text-tertiary);
@@ -1329,6 +1341,68 @@
 
 .home-overview-note[data-alert="true"] {
   color: var(--status-offline);
+}
+
+/* 「资源」那格：名称、进度条、百分比，右边的明细放不下就先缩它。 */
+.home-overview-metric-label {
+  flex: 0 0 auto;
+  width: 2.4em;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* 「资源」的行不折行：明细宁可缩成省略号，也不要另起一行把整张卡撑高。
+   条的基本宽度压到 28px，四列（每格约 240px）时名称 + 条 + 百分比 + 明细才排得下。 */
+.home-overview-metric-row {
+  flex-wrap: nowrap;
+  align-items: center;
+  align-content: center;
+  gap: 6px;
+}
+
+.home-overview-bar {
+  flex: 1 1 28px;
+  min-width: 24px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--progress-bg);
+}
+
+.home-overview-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 240ms ease;
+}
+
+.home-overview-metric-value {
+  flex: 0 0 auto;
+  min-width: 34px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 640;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.home-overview-detail {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 10.5px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 两列时这一行塞不下「名称 + 条 + 百分比 + 明细」，明细让位（全文在 title 里）。 */
+@media (max-width: 720px) {
+  .home-overview-detail {
+    display: none;
+  }
 }
 
 .home-overview-empty {
@@ -1549,8 +1623,7 @@
     font-size: 15px;
   }
 
-  .server-traffic-section,
-  .server-card-meta-grid {
+  .server-traffic-section {
     grid-template-columns: 1fr;
     gap: 14px;
   }

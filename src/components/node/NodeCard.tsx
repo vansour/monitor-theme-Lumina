@@ -8,8 +8,6 @@ import {
   Globe,
   ArrowDown,
   ArrowUp,
-  Calendar,
-  RefreshCw,
   ExternalLink,
   Power,
 } from "lucide-react";
@@ -26,7 +24,7 @@ import {
 import { getExpireTextColor } from "@/utils/expireStatus";
 import { Flag } from "@/components/ui/Flag";
 import { MetricBar } from "./MetricBar";
-import { CanvasStrip, resolveCssColor } from "./CanvasStrip";
+import { CanvasStrip, fillRoundedRect, resolveCssColor } from "./CanvasStrip";
 import { clsx } from "clsx";
 import type { TrafficTrendSample } from "@/types/monitor";
 import type { TrafficRateDisplay } from "@/utils/format";
@@ -51,9 +49,9 @@ export const NodeCard = memo(function NodeCard({
     return (
       <div
         className="server-card animate-pulse"
-        // 与卡片实测高度一致（桌面栅格 401px），骨架不该比真卡片高或矮；
+        // 与卡片实测高度一致（桌面栅格 358px），骨架不该比真卡片高或矮；
         // 同一数字在 surface.css 的 contain-intrinsic-size 里也有一份。
-        style={{ minHeight: 401 }}
+        style={{ minHeight: 358 }}
         aria-busy
       />
     );
@@ -62,6 +60,9 @@ export const NodeCard = memo(function NodeCard({
   const expire = formatExpireDays(node.expiresIn);
   const uptime = formatUptimeDays(node.uptime);
   const subtitle = buildSubtitle([node.os, node.arch, node.virtualization]);
+  const expireText = `${expire.value}${expire.unit ? ` ${expire.unit}` : ""}`;
+  const uptimeText = `${uptime.value}${uptime.unit ? ` ${uptime.unit}` : ""}`;
+  const subtitleWithMeta = buildSubtitle([subtitle, `到期 ${expireText}`, `在线 ${uptimeText}`]);
   const loadBaseline = node.cpu_cores > 0 ? node.cpu_cores : 4;
   const loadFraction = Math.max(0, Math.min(1, node.load1 / loadBaseline));
   const upRate = formatTrafficRate(node.netUp);
@@ -122,11 +123,21 @@ export const NodeCard = memo(function NodeCard({
                 title={node.online == null ? "状态同步中" : isOnline ? "在线" : "离线"}
               />
             </div>
-            {subtitle && (
+            {/* 到期与在线从底部的单独一栏挪上来（那栏还带着一条分隔线），
+                缩成副标题下面的一行小字。挤进副标题同一行的话，长一点的系统名
+                会把「在线 X 天」截掉。 */}
+            {subtitle ? (
               <p className="server-card-subtitle" title={subtitle}>
                 {subtitle}
               </p>
-            )}
+            ) : null}
+            <p className="server-card-subtitle-meta" title={subtitleWithMeta}>
+              <span style={{ color: getExpireTextColor(node.expiresIn) }}>
+                到期 {expireText}
+              </span>
+              {" · "}
+              <span style={{ color: "var(--progress-cpu)" }}>在线 {uptimeText}</span>
+            </p>
           </div>
           <Link
             to={`/instance/${node.id}`}
@@ -173,6 +184,9 @@ export const NodeCard = memo(function NodeCard({
               icon={<Gauge size={13} strokeWidth={2} />}
               label="负载"
               valueText={node.load1.toFixed(2)}
+              // 大数字是 1 分钟均值，明细给全三个 —— 负载这一格原来是四格里唯一
+              // 没有明细的，旁边的进度条又是按「除以核数」画的，缺上下文。
+              detailText={`${node.load1.toFixed(2)} / ${node.load5.toFixed(2)} / ${node.load15.toFixed(2)}`}
               fraction={loadFraction}
               redrawKey={resolvedAppearance}
               paint={{
@@ -205,25 +219,6 @@ export const NodeCard = memo(function NodeCard({
               redrawKey={resolvedAppearance}
               color="var(--status-success)"
               icon={<ArrowDown size={15} strokeWidth={2.4} />}
-            />
-          </div>
-        </div>
-
-        <div className="server-card-footer">
-          <div className="server-card-meta-grid">
-            <FooterStat
-              icon={<Calendar size={13} strokeWidth={2} />}
-              label="到期"
-              value={expire.value}
-              unit={expire.unit}
-              color={getExpireTextColor(node.expiresIn)}
-            />
-            <FooterStat
-              icon={<RefreshCw size={13} strokeWidth={2} />}
-              label="在线"
-              value={uptime.value}
-              unit={uptime.unit}
-              color="var(--progress-cpu)"
             />
           </div>
         </div>
@@ -266,7 +261,7 @@ function TrafficStat({
         </span>
       </div>
       <div className="traffic-stat-trend" aria-hidden>
-        <TrafficDotStrip samples={samples} color={color} redrawKey={redrawKey} />
+        <TrafficTrendStrip samples={samples} color={color} redrawKey={redrawKey} />
         <span className="traffic-stat-live" data-live={live ? "true" : "false"}>
           <span
             className="traffic-stat-live-dot"
@@ -288,7 +283,11 @@ function TrafficStat({
   );
 }
 
-function TrafficDotStrip({
+/**
+ * 最近若干次采样的迷你柱：一条 8px 高的细带，柱高就是那次采样的流量档位。
+ * 原来是一排圆点（半径编码档位），占掉一整行；压成细带后这一行并进了速率那一行下面。
+ */
+function TrafficTrendStrip({
   samples,
   color,
   redrawKey,
@@ -302,24 +301,17 @@ function TrafficDotStrip({
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
       if (samples.length === 0) return;
       const slotWidth = width / samples.length;
+      const barWidth = Math.max(1, Math.min(3, slotWidth - 1));
       const baseColor = resolveCssColor(color);
       const inactiveColor = resolveCssColor("var(--progress-bg)");
 
       samples.forEach((sample, index) => {
         const hasTraffic = sample.value > 0;
-        const scale = hasTraffic ? 0.72 + sample.level * 0.82 : 0.46;
-        const radius = 2 * scale;
-        const tone = hasTraffic
-          ? `color-mix(in srgb, ${baseColor} ${Math.round(68 + sample.level * 20)}%, white ${Math.round(32 - sample.level * 20)}%)`
-          : inactiveColor;
-        const x = index * slotWidth + slotWidth / 2;
-        const y = height / 2;
-
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = tone;
-        ctx.globalAlpha = hasTraffic ? Math.min(1, sample.opacity + 0.05) : 0.46;
-        ctx.fill();
+        const barHeight = hasTraffic ? 2 + sample.level * (height - 2) : 1.5;
+        const x = index * slotWidth + (slotWidth - barWidth) / 2;
+        ctx.globalAlpha = hasTraffic ? Math.min(1, sample.opacity + 0.05) : 0.5;
+        ctx.fillStyle = hasTraffic ? baseColor : inactiveColor;
+        fillRoundedRect(ctx, x, height - barHeight, barWidth, barHeight, barWidth / 2);
       });
 
       ctx.globalAlpha = 1;
@@ -329,8 +321,8 @@ function TrafficDotStrip({
 
   return (
     <CanvasStrip
-      className="traffic-dot-strip"
-      height={10}
+      className="traffic-trend-strip"
+      height={8}
       ariaHidden
       redrawKey={redrawKey}
       draw={draw}
@@ -374,29 +366,3 @@ function GlobeArrow({
   );
 }
 
-function FooterStat({
-  icon,
-  label,
-  value,
-  unit,
-  color,
-}: {
-  label: string;
-  value: string;
-  unit?: string;
-  color: string;
-  icon: ReactNode;
-}) {
-  return (
-    <div className="server-card-meta">
-      <div className="server-card-meta-label">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <span className="server-card-meta-value tabular" style={{ color }}>
-        {value}
-        {unit && <span className="server-card-meta-unit">{unit}</span>}
-      </span>
-    </div>
-  );
-}
